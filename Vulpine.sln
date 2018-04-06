@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vulpine", "Vulpine\Vulpine.csproj", "{72C2A822-6AED-4D95-9511-FF218C467B61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VulpineTest", "VulpineTest\VulpineTest.csproj", "{17B4201A-51F6-44E4-9E9B-FA66AFC001B6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{72C2A822-6AED-4D95-9511-FF218C467B61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72C2A822-6AED-4D95-9511-FF218C467B61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72C2A822-6AED-4D95-9511-FF218C467B61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72C2A822-6AED-4D95-9511-FF218C467B61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17B4201A-51F6-44E4-9E9B-FA66AFC001B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17B4201A-51F6-44E4-9E9B-FA66AFC001B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17B4201A-51F6-44E4-9E9B-FA66AFC001B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17B4201A-51F6-44E4-9E9B-FA66AFC001B6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
