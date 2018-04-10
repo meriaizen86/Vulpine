@@ -34,6 +34,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -47,8 +52,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandBufferController.cs" />
+    <Compile Include="DescriptorItem.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Graphics.cs" />
+    <Compile Include="MathHelper.cs" />
+    <Compile Include="Matrix4.cs" />
     <Compile Include="PipelineController.cs" />
     <Compile Include="VKBuffer.cs" />
     <Compile Include="Content.cs" />
@@ -64,6 +73,7 @@
     <Compile Include="Vector3I.cs" />
     <Compile Include="Vertex.cs" />
     <Compile Include="VKHelper.cs" />
+    <Compile Include="VKImage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

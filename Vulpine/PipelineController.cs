@@ -10,45 +10,58 @@ namespace Vulpine
 {
     public class PipelineController : IDisposable
     {
-        Context Context;
         internal ImageView[] ImageViews;
+        internal Texture2D DepthStencil;
         internal RenderPass RenderPass;
         internal Framebuffer[] Framebuffers;
+        internal DescriptorSetLayout DescriptorSetLayout;
         internal PipelineLayout PipelineLayout;
+        internal DescriptorPool DescriptorPool;
+        internal DescriptorSet DescriptorSet;
         internal Pipeline Pipeline;
+        internal Graphics Graphics;
 
-        public int Samples = 1;
-        public Vector2I Size;
+        public string[] Shaders = { };
+        public DescriptorItem[] DescriptorItems = { };
+        public bool DepthTest = true, DepthWrite = true;
 
-        public PipelineController(GameWindow gw)
+        public PipelineController(Graphics g)
         {
-            Context = gw.Context;
-            Size = gw.Size;
-            Context.Pipelines.Add(this);
-            Build();
+            Graphics = g;
+            Graphics.Context.Pipelines.Add(this);
         }
 
         public void Build()
         {
-            RenderPass?.Dispose();
+            DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
-            ImageViews?.Dispose();
-            Framebuffers?.Dispose();
+            DescriptorPool?.Dispose();
+            DepthStencil?.Dispose();
+            RenderPass?.Dispose();
+            ImageViews?.DisposeRange();
+            Framebuffers?.DisposeRange();
             Pipeline?.Dispose();
 
-            RenderPass = VKHelper.CreateRenderPass(Context, Samples);
-            PipelineLayout = VKHelper.CreatePipelineLayout(Context);
-            ImageViews = VKHelper.CreateImageViews(Context);
-            Framebuffers = VKHelper.CreateFramebuffers(Context, RenderPass, ImageViews, Size);
-            Pipeline = VKHelper.CreateGraphicsPipeline(Context, PipelineLayout, RenderPass, Size);
+            DescriptorSetLayout = VKHelper.CreateDescriptorSetLayout(Graphics, DescriptorItems);
+            PipelineLayout = VKHelper.CreatePipelineLayout(Graphics, DescriptorSetLayout);
+            DescriptorPool = VKHelper.CreateDescriptorPool(Graphics, DescriptorItems);
+            DescriptorSet = VKHelper.CreateDescriptorSet(DescriptorPool, DescriptorSetLayout, DescriptorItems);
+            DepthStencil = Texture2D.DepthStencil(Graphics.Context, Graphics.ViewportSize.X, Graphics.ViewportSize.Y);
+            RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil);
+            ImageViews = VKHelper.CreateImageViews(Graphics);
+            Framebuffers = VKHelper.CreateFramebuffers(Graphics, RenderPass, ImageViews, DepthStencil);
+            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite);
         }
 
         public void Dispose()
         {
-            RenderPass?.Dispose();
+            DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
-            ImageViews?.Dispose();
-            Framebuffers?.Dispose();
+            DescriptorPool?.Dispose();
+            DepthStencil?.Dispose();
+            RenderPass?.Dispose();
+            ImageViews?.DisposeRange();
+            Framebuffers?.DisposeRange();
             Pipeline?.Dispose();
         }
     }

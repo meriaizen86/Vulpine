@@ -9,7 +9,7 @@ using VulkanCore;
 
 namespace Vulpine
 {
-    internal class Content : EasyDisposable
+    public class Content : EasyDisposable
     {
         internal string Root = "Data";
         Dictionary<string, IDisposable> Cached = new Dictionary<string, IDisposable>();
@@ -20,7 +20,7 @@ namespace Vulpine
             Context = context;
         }
 
-        internal T Get<T>(string name)
+        public T Get<T>(string name)
             where T : IDisposable
         {
             IDisposable found;

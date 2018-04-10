@@ -19,20 +19,22 @@ namespace Vulpine
         }
     }
 
-    internal class Texture2D : IDisposable
+    public class Texture2D : IDisposable
     {
-        private Texture2D(Image image, DeviceMemory memory, ImageView view, Format format)
+        private Texture2D(Image image, DeviceMemory memory, ImageView view, Format format, Sampler sampler)
         {
             Image = image;
             Memory = memory;
             View = view;
             Format = format;
+            Sampler = sampler;
         }
 
         internal Format Format { get; }
         internal Image Image { get; }
         internal ImageView View { get; }
         internal DeviceMemory Memory { get; }
+        internal Sampler Sampler { get; }
 
         public void Dispose()
         {
@@ -85,7 +87,9 @@ namespace Vulpine
             ImageView view = image.CreateView(new ImageViewCreateInfo(format,
                 new ImageSubresourceRange(ImageAspects.Depth | ImageAspects.Stencil, 0, 1, 0, 1)));
 
-            return new Texture2D(image, memory, view, format);
+            var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Linear);
+
+            return new Texture2D(image, memory, view, format, sampler);
         }
 
         internal static Texture2D FromFile(Context ctx, string path)
@@ -100,7 +104,7 @@ namespace Vulpine
         {
             const int numberOfMipmapLevels = 1;
             const int pixelDepth = 4;
-            const Format pixelFormat = Format.B8G8R8A8UNorm;
+            const Format pixelFormat = Format.R8G8B8A8UNorm;//Format.B8G8R8A8UNorm;
 
             using (var img = new System.Drawing.Bitmap(stream))
             {
@@ -115,7 +119,7 @@ namespace Vulpine
                         bytes[n + 1] = px.G;
                         bytes[n + 2] = px.B;
                         bytes[n + 3] = px.A;
-                        n++;
+                        n += 4;
                     }
                 }
 
@@ -130,7 +134,7 @@ namespace Vulpine
                     var mipmap = new TextureData.Mipmap
                     {
                         Size = img.Width * img.Height * pixelDepth,
-                        Extent = new Extent3D(img.Width, img.Height, pixelDepth)
+                        Extent = new Extent3D(img.Width, img.Height, 1)
                     };
                     mipmap.Data = bytes;
                     data.Mipmaps[i] = mipmap;
@@ -229,7 +233,9 @@ namespace Vulpine
             // Create image view.
             ImageView view = image.CreateView(new ImageViewCreateInfo(tex2D.Format, subresourceRange));
 
-            return new Texture2D(image, memory, view, tex2D.Format);
+            var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Linear);
+
+            return new Texture2D(image, memory, view, tex2D.Format, sampler);
         }
     }
 }

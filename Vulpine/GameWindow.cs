@@ -16,6 +16,8 @@ namespace Vulpine
         Form Form;
         bool Running;
         internal Context Context;
+        public Graphics Graphics => Context.Graphics;
+        public Content Content => Context.Content;
         public double SecondsPerUpdate = 1.0 / 60.0;
         public double UpdatesPerSecond
         {
@@ -75,10 +77,11 @@ namespace Vulpine
             Context = ToDispose(new Context(this));
 
             OnInit();
-            OnBuildPipeline();
+            OnBuildPipelines();
             
             OnLoad();
-            Context.RecordCommandBuffers();
+            for (var i = 0; i < Context.SwapchainImages.Length; i++)
+                OnNewSwapchainImage(i);
         }
         
         public void Run()
@@ -100,16 +103,16 @@ namespace Vulpine
                 var elapsed = updateSW.Elapsed;
                 if (elapsed.TotalSeconds > SecondsPerUpdate)
                 {
+                    updateSW.Restart();
                     OnUpdate(updateCount++);
                     
                     ActualUPS = 1.0 / elapsed.TotalSeconds;
-                    updateSW.Restart();
                 }
 
                 elapsed = drawSW.Elapsed;
-                OnDraw();
-                ActualFPS = 1.0 / elapsed.TotalSeconds;
                 drawSW.Restart();
+                Draw();
+                ActualFPS = 1.0 / elapsed.TotalSeconds;
             }
         }
 
@@ -120,12 +123,13 @@ namespace Vulpine
 
             Context.Swapchain?.Dispose();
             Context.Swapchain = ToDispose(VKHelper.CreateSwapchain(Context));
-            Context.SwapchainImages?.Dispose();
-            Context.SwapchainImages = Context.Swapchain.GetImages();
+            Context.SwapchainImages?.DisposeRange();
+            Context.CacheSwapchainImages();
 
-            OnBuildPipeline();
+            OnBuildPipelines();
 
-            Context.RecordCommandBuffers();
+            for (var i = 0; i < Context.SwapchainImages.Length; i++)
+                OnNewSwapchainImage(i);
         }
 
         protected virtual void OnInit()
@@ -133,7 +137,7 @@ namespace Vulpine
 
         }
 
-        protected virtual void OnBuildPipeline()
+        protected virtual void OnBuildPipelines()
         {
             
         }
@@ -143,14 +147,7 @@ namespace Vulpine
             
         }
 
-        internal void RecordCommandBuffer(CommandBuffer cmdBuffer, int imageIndex)
-        {
-            Graphics.CommandBuffer = cmdBuffer;
-            Graphics.ImageIndex = imageIndex;
-            Graphics.GameWindow = this;
-            OnRecordCommandBuffer();
-        }
-        protected virtual void OnRecordCommandBuffer()
+        protected virtual void OnNewSwapchainImage(int index)
         {
 
         }
@@ -159,22 +156,24 @@ namespace Vulpine
         {
 
         }
-
-        void OnDraw()
+        
+        void Draw()
         {
             // Acquire an index of drawing image for this frame.
             int imageIndex = Context.Swapchain.AcquireNextImage(-1, Context.ImageAvailableSemaphore);
 
-            // Submit recorded commands to graphics queue for execution.
-            Context.GraphicsQueue.Submit(
-                Context.ImageAvailableSemaphore,
-                PipelineStages.Transfer,
-                Context.CommandBuffers[imageIndex],
-                Context.RenderingFinishedSemaphore
-            );
+            Context.GraphicsQueue.Submit(new SubmitInfo(waitSemaphores: new[] { Context.ImageAvailableSemaphore }, waitDstStageMask: new[] { PipelineStages.ColorAttachmentOutput }));
+            OnDrawToSwapchainImage(imageIndex);
+            Context.GraphicsQueue.WaitIdle();
+            Context.GraphicsQueue.Submit(new SubmitInfo(signalSemaphores: new[] { Context.RenderingFinishedSemaphore }));
 
             // Present the color output to screen.
             Context.PresentQueue.PresentKhr(Context.RenderingFinishedSemaphore, Context.Swapchain, imageIndex);
+        }
+
+        protected virtual void OnDrawToSwapchainImage(int swapchainImageIndex)
+        {
+
         }
     }
 }

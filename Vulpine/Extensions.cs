@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Vulpine
 {
-    static class Extensions
+    public static class Extensions
     {
-        public static void Dispose<T>(this ICollection<T> arr)
+        public static void DisposeRange<T>(this ICollection<T> arr)
             where T : IDisposable
         {
             foreach (var e in arr)

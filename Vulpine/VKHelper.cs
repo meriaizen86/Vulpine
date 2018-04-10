@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 
 using VulkanCore;
 using VulkanCore.Ext;
@@ -14,6 +15,23 @@ namespace Vulpine
 {
     internal static class VKHelper
     {
+        static PipelineVertexInputStateCreateInfo DefaultVertexAttr;
+
+        static VKHelper()
+        {
+            /* Use reflection to generate a default PipelineVertexInputStateCreateInfo from the Vertex struct later
+            DefaultVertexAttr = new PipelineVertexInputStateCreateInfo(
+                new[] { new VertexInputBindingDescription(0, Interop.SizeOf<Vertex>(), VertexInputRate.Vertex) },
+                new[]
+                {
+                    new VertexInputAttributeDescription(0, 0, Format.R32G32B32SFloat, 0),  // Position.
+                    new VertexInputAttributeDescription(1, 0, Format.R32G32B32SFloat, 12), // Normal.
+                    new VertexInputAttributeDescription(2, 0, Format.R32G32SFloat, 24)     // TexCoord.
+                }
+            );*/
+        }
+
+
         internal static Instance CreateInstance()
         {
             // Pick surface extension for platform to create a window surface
@@ -131,14 +149,14 @@ namespace Vulpine
                 presentMode));
         }
 
-        public static ImageView[] CreateImageViews(Context ctx)
+        public static ImageView[] CreateImageViews(Graphics g)
         {
-            var imageViews = new ImageView[ctx.SwapchainImages.Length];
-            for (int i = 0; i < ctx.SwapchainImages.Length; i++)
+            var imageViews = new ImageView[g.Context.SwapchainImages.Length];
+            for (int i = 0; i < g.Context.SwapchainImages.Length; i++)
             {
-                imageViews[i] = ctx.SwapchainImages[i].CreateView(
+                imageViews[i] = g.Context.SwapchainImages[i].Image.CreateView(
                     new ImageViewCreateInfo(
-                        ctx.Swapchain.Format,
+                        g.Context.Swapchain.Format,
                         new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1)
                     )
                 );
@@ -146,93 +164,217 @@ namespace Vulpine
             return imageViews;
         }
 
-        public static RenderPass CreateRenderPass(Context ctx, int samples)
+        public static RenderPass CreateRenderPass(Graphics g, Texture2D depthStencil)
         {
             var subpasses = new[]
             {
-                new SubpassDescription(new[] { new AttachmentReference(0, VulkanCore.ImageLayout.ColorAttachmentOptimal) })
+                new SubpassDescription(
+                    new[] { new AttachmentReference(0, VulkanCore.ImageLayout.ColorAttachmentOptimal) },
+                    new AttachmentReference(1, VulkanCore.ImageLayout.DepthStencilAttachmentOptimal))
             };
+            var samples = g.Samples == 64 ? SampleCounts.Count64 :
+                        g.Samples == 32 ? SampleCounts.Count32 :
+                        g.Samples == 16 ? SampleCounts.Count16 :
+                        g.Samples == 8 ? SampleCounts.Count8 :
+                        g.Samples == 4 ? SampleCounts.Count4 :
+                        g.Samples == 2 ? SampleCounts.Count2 :
+                        SampleCounts.Count1;
             var attachments = new[]
             {
                 new AttachmentDescription
                 {
-                    Samples =
-                        samples == 64 ? SampleCounts.Count64 :
-                        samples == 64 ? SampleCounts.Count32 :
-                        samples == 64 ? SampleCounts.Count16 :
-                        samples == 64 ? SampleCounts.Count8 :
-                        samples == 64 ? SampleCounts.Count4 :
-                        samples == 64 ? SampleCounts.Count2 :
-                        SampleCounts.Count1,
-                    Format = ctx.Swapchain.Format,
-                    InitialLayout = VulkanCore.ImageLayout.Undefined,
-                    FinalLayout = VulkanCore.ImageLayout.PresentSrcKhr,
-                    LoadOp = AttachmentLoadOp.Clear,
+                    Format = g.Context.Swapchain.Format,
+                    Samples = samples,
+                    LoadOp = AttachmentLoadOp.Load,
                     StoreOp = AttachmentStoreOp.Store,
                     StencilLoadOp = AttachmentLoadOp.DontCare,
-                    StencilStoreOp = AttachmentStoreOp.DontCare
+                    StencilStoreOp = AttachmentStoreOp.DontCare,
+                    InitialLayout = VulkanCore.ImageLayout.Undefined,
+                    FinalLayout = VulkanCore.ImageLayout.PresentSrcKhr
+                },
+                new AttachmentDescription
+                {
+                    Format = depthStencil.Format,
+                    Samples = samples,
+                    LoadOp = AttachmentLoadOp.Load,
+                    StoreOp = AttachmentStoreOp.DontCare,
+                    StencilLoadOp = AttachmentLoadOp.DontCare,
+                    StencilStoreOp = AttachmentStoreOp.DontCare,
+                    InitialLayout = VulkanCore.ImageLayout.Undefined,
+                    FinalLayout = VulkanCore.ImageLayout.DepthStencilAttachmentOptimal
                 }
             };
 
-            var createInfo = new RenderPassCreateInfo(subpasses, attachments);
-            return ctx.Device.CreateRenderPass(createInfo);
+            var dependencies = new[]
+            {
+                new SubpassDependency
+                {
+                    SrcSubpass = Constant.SubpassExternal,
+                    DstSubpass = 0,
+                    SrcStageMask = PipelineStages.BottomOfPipe,
+                    DstStageMask = PipelineStages.ColorAttachmentOutput,
+                    SrcAccessMask = Accesses.MemoryRead,
+                    DstAccessMask = Accesses.ColorAttachmentRead | Accesses.ColorAttachmentWrite,
+                    DependencyFlags = Dependencies.ByRegion
+                },
+                new SubpassDependency
+                {
+                    SrcSubpass = 0,
+                    DstSubpass = Constant.SubpassExternal,
+                    SrcStageMask = PipelineStages.ColorAttachmentOutput,
+                    DstStageMask = PipelineStages.BottomOfPipe,
+                    SrcAccessMask = Accesses.ColorAttachmentRead | Accesses.ColorAttachmentWrite,
+                    DstAccessMask = Accesses.MemoryRead,
+                    DependencyFlags = Dependencies.ByRegion
+                }
+            };
+
+            var createInfo = new RenderPassCreateInfo(subpasses, attachments, dependencies);
+            return g.Context.Device.CreateRenderPass(createInfo);
         }
 
-        public static PipelineLayout CreatePipelineLayout(Context ctx)
+        public static Sampler CreateSampler(Context ctx, Filter magFilter, Filter minFilter, SamplerMipmapMode mipmapMode)
         {
-            var layoutCreateInfo = new PipelineLayoutCreateInfo();
-            return ctx.Device.CreatePipelineLayout(layoutCreateInfo);
+            var createInfo = new SamplerCreateInfo
+            {
+                MagFilter = magFilter,
+                MinFilter = minFilter,
+                MipmapMode = mipmapMode
+            };
+            // We also enable anisotropic filtering. Because that feature is optional, it must be
+            // checked if it is supported by the device.
+            if (ctx.Features.SamplerAnisotropy)
+            {
+                createInfo.AnisotropyEnable = true;
+                createInfo.MaxAnisotropy = ctx.Properties.Limits.MaxSamplerAnisotropy;
+            }
+            else
+            {
+                createInfo.MaxAnisotropy = 1.0f;
+            }
+            return ctx.Device.CreateSampler(createInfo);
         }
 
-        public static Framebuffer[] CreateFramebuffers(Context ctx, RenderPass rp, ImageView[] iv, Vector2I size)
+        public static DescriptorSetLayout CreateDescriptorSetLayout(Graphics g, DescriptorItem[] items)
         {
-            var framebuffers = new Framebuffer[ctx.SwapchainImages.Length];
-            for (int i = 0; i < ctx.SwapchainImages.Length; i++)
+            var bindings = new DescriptorSetLayoutBinding[items.Length];
+            for (var i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                bindings[i] = new DescriptorSetLayoutBinding(
+                    i,
+                    item.Type == DescriptorItem.DescriptorType.UniformBuffer ? DescriptorType.UniformBuffer :
+                        item.Type == DescriptorItem.DescriptorType.CombinedImageSampler ? DescriptorType.CombinedImageSampler :
+                        DescriptorType.UniformBuffer,
+                    item.Count,
+                    item.Shader == DescriptorItem.ShaderType.Vertex ? ShaderStages.Vertex :
+                        item.Shader == DescriptorItem.ShaderType.Fragment ? ShaderStages.Fragment :
+                        ShaderStages.All
+                );
+            }
+            return g.Context.Device.CreateDescriptorSetLayout(new DescriptorSetLayoutCreateInfo(bindings));
+        }
+
+        public static PipelineLayout CreatePipelineLayout(Graphics g, params DescriptorSetLayout[] setLayouts)
+        {
+            var layoutCreateInfo = new PipelineLayoutCreateInfo(setLayouts);
+            return g.Context.Device.CreatePipelineLayout(layoutCreateInfo);
+        }
+
+        public static Framebuffer[] CreateFramebuffers(Graphics g, RenderPass rp, ImageView[] iv, Texture2D depthStencil)
+        {
+            var framebuffers = new Framebuffer[g.Context.SwapchainImages.Length];
+            for (int i = 0; i < g.Context.SwapchainImages.Length; i++)
             {
                 framebuffers[i] = rp.CreateFramebuffer(new FramebufferCreateInfo(
-                    new[] { iv[i] },
-                    size.X,
-                    size.Y));
+                    new[] { iv[i], depthStencil.View },
+                    g.ViewportSize.X,
+                    g.ViewportSize.Y));
             }
             return framebuffers;
         }
 
-        public static Pipeline CreateGraphicsPipeline(Context ctx, PipelineLayout pl, RenderPass rp, Vector2I size)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite)
         {
-            ShaderModule vertexShader = ctx.Content.Get<ShaderModule>("Shader.vert.spv");
-            ShaderModule fragmentShader = ctx.Content.Get<ShaderModule>("Shader.frag.spv");
-            var shaderStageCreateInfos = new[]
+            var shaderStageCreateInfos = new PipelineShaderStageCreateInfo[shaderNames.Length];
+            for (var i = 0; i < shaderNames.Length; i++)
             {
-                new PipelineShaderStageCreateInfo(ShaderStages.Vertex, vertexShader, "main"),
-                new PipelineShaderStageCreateInfo(ShaderStages.Fragment, fragmentShader, "main")
-            };
+                var shader = g.Context.Content.Get<ShaderModule>(shaderNames[i]);
+                var shaderName = Path.GetFileNameWithoutExtension(shaderNames[i]);
+                switch (Path.GetExtension(shaderName))
+                {
+                    case ".vert":
+                        shaderStageCreateInfos[i] = new PipelineShaderStageCreateInfo(ShaderStages.Vertex, shader, "main");
+                        break;
+                    case ".frag":
+                        shaderStageCreateInfos[i] = new PipelineShaderStageCreateInfo(ShaderStages.Fragment, shader, "main");
+                        break;
+                    default:
+                        throw new NotImplementedException($"Unreognized shader type for file \"{shaderNames[i]}\"");
+                }
+                
+            }
 
-            var vertexInputStateCreateInfo = new PipelineVertexInputStateCreateInfo();
+            var vertexInputStateCreateInfo = new PipelineVertexInputStateCreateInfo(
+                new[] { new VertexInputBindingDescription(0, Interop.SizeOf<Vertex>(), VertexInputRate.Vertex) },
+                new[]
+                {
+                    new VertexInputAttributeDescription(0, 0, Format.R32G32B32SFloat, 0),  // Position.
+                    new VertexInputAttributeDescription(1, 0, Format.R32G32B32SFloat, 12), // Normal.
+                    new VertexInputAttributeDescription(2, 0, Format.R32G32SFloat, 24)     // TexCoord.
+                }
+            );
             var inputAssemblyStateCreateInfo = new PipelineInputAssemblyStateCreateInfo(PrimitiveTopology.TriangleList);
             var viewportStateCreateInfo = new PipelineViewportStateCreateInfo(
-                new Viewport(0, 0, size.X, size.Y),
-                new Rect2D(0, 0, size.X, size.Y));
+                new Viewport(g.ViewportPosition.X + g.ViewportSize.X, g.ViewportPosition.Y + g.ViewportSize.Y, -g.ViewportSize.X, -g.ViewportSize.Y),
+                new Rect2D(g.ViewportPosition.X, g.ViewportPosition.Y, g.ViewportSize.X, g.ViewportSize.Y));
             var rasterizationStateCreateInfo = new PipelineRasterizationStateCreateInfo
             {
                 PolygonMode = PolygonMode.Fill,
                 CullMode = CullModes.Back,
-                FrontFace = FrontFace.CounterClockwise,
+                FrontFace = FrontFace.Clockwise,
                 LineWidth = 1.0f
             };
             var multisampleStateCreateInfo = new PipelineMultisampleStateCreateInfo
             {
-                RasterizationSamples = SampleCounts.Count1,
+                RasterizationSamples =
+                        g.Samples == 64 ? SampleCounts.Count64 :
+                        g.Samples == 32 ? SampleCounts.Count32 :
+                        g.Samples == 16 ? SampleCounts.Count16 :
+                        g.Samples == 8 ? SampleCounts.Count8 :
+                        g.Samples == 4 ? SampleCounts.Count4 :
+                        g.Samples == 2 ? SampleCounts.Count2 :
+                        SampleCounts.Count1,
                 MinSampleShading = 1.0f
+            };
+            var depthStencilCreateInfo = new PipelineDepthStencilStateCreateInfo
+            {
+                DepthTestEnable = depthTest,
+                DepthWriteEnable = depthWrite,
+                DepthCompareOp = CompareOp.LessOrEqual,
+                Back = new StencilOpState
+                {
+                    FailOp = StencilOp.Keep,
+                    PassOp = StencilOp.Keep,
+                    CompareOp = CompareOp.Always
+                },
+                Front = new StencilOpState
+                {
+                    FailOp = StencilOp.Keep,
+                    PassOp = StencilOp.Keep,
+                    CompareOp = CompareOp.Always
+                }
             };
             var colorBlendAttachmentState = new PipelineColorBlendAttachmentState
             {
-                SrcColorBlendFactor = BlendFactor.One,
-                DstColorBlendFactor = BlendFactor.Zero,
+                SrcColorBlendFactor = BlendFactor.SrcAlpha,
+                DstColorBlendFactor = BlendFactor.OneMinusSrcAlpha,
                 ColorBlendOp = BlendOp.Add,
                 SrcAlphaBlendFactor = BlendFactor.One,
                 DstAlphaBlendFactor = BlendFactor.Zero,
                 AlphaBlendOp = BlendOp.Add,
-                ColorWriteMask = ColorComponents.All
+                ColorWriteMask = ColorComponents.All,
+                BlendEnable = true
             };
             var colorBlendStateCreateInfo = new PipelineColorBlendStateCreateInfo(
                 new[] { colorBlendAttachmentState });
@@ -245,8 +387,56 @@ namespace Vulpine
                 rasterizationStateCreateInfo,
                 viewportState: viewportStateCreateInfo,
                 multisampleState: multisampleStateCreateInfo,
-                colorBlendState: colorBlendStateCreateInfo);
-            return ctx.Device.CreateGraphicsPipeline(pipelineCreateInfo);
+                depthStencilState: depthStencilCreateInfo,
+                colorBlendState: colorBlendStateCreateInfo//,
+                //dynamicState: new PipelineDynamicStateCreateInfo(DynamicState.Viewport)
+            );
+            return g.Context.Device.CreateGraphicsPipeline(pipelineCreateInfo);
+        }
+
+        public static DescriptorPool CreateDescriptorPool(Graphics g, DescriptorItem[] items)
+        {
+            var sizes = new DescriptorPoolSize[items.Length];
+            for (var i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                sizes[i] = new DescriptorPoolSize(
+                    item.Type == DescriptorItem.DescriptorType.UniformBuffer ? DescriptorType.UniformBuffer :
+                        item.Type == DescriptorItem.DescriptorType.CombinedImageSampler ? DescriptorType.CombinedImageSampler :
+                        DescriptorType.UniformBuffer,
+                    item.Count
+                );
+            }
+            
+            return g.Context.Device.CreateDescriptorPool(
+                new DescriptorPoolCreateInfo(sizes.Length, sizes));
+        }
+
+        public static DescriptorSet CreateDescriptorSet(DescriptorPool pool, DescriptorSetLayout setLayout, DescriptorItem[] items)
+        {
+            DescriptorSet descriptorSet = pool.AllocateSets(new DescriptorSetAllocateInfo(1, setLayout))[0];
+
+            var writeDescriptorSets = new WriteDescriptorSet[items.Length];
+            for (var i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                switch (item.Type)
+                {
+                    case DescriptorItem.DescriptorType.UniformBuffer:
+                        writeDescriptorSets[i] = new WriteDescriptorSet(descriptorSet, i, 0, item.Count, DescriptorType.UniformBuffer,
+                            bufferInfo: new[] { new DescriptorBufferInfo(item.Buffer, 0, item.Buffer.Size) });
+                        break;
+                    case DescriptorItem.DescriptorType.CombinedImageSampler:
+                        writeDescriptorSets[i] = new WriteDescriptorSet(descriptorSet, i, 0, 1, DescriptorType.CombinedImageSampler,
+                            imageInfo: new[] { new DescriptorImageInfo(item.Texture.Sampler, item.Texture.View, VulkanCore.ImageLayout.General) });
+                        break;
+                    default:
+                        throw new NotImplementedException($"No case for {item.Type}");
+                }
+            }
+
+            pool.UpdateSets(writeDescriptorSets);
+            return descriptorSet;
         }
     }
 }

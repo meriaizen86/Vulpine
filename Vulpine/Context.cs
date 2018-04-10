@@ -21,7 +21,7 @@ namespace Vulpine
         internal PhysicalDevice PhysicalDevice;
         internal PhysicalDeviceMemoryProperties MemoryProperties;
         internal PhysicalDeviceFeatures Features;
-        PhysicalDeviceProperties Properties;
+        internal PhysicalDeviceProperties Properties;
         internal Queue GraphicsQueue;
         internal Queue ComputeQueue;
         internal Queue PresentQueue;
@@ -29,10 +29,11 @@ namespace Vulpine
         internal CommandPool ComputeCommandPool;
         internal Semaphore ImageAvailableSemaphore;
         internal Semaphore RenderingFinishedSemaphore;
+        //internal Semaphore CommandBufferSemaphore;
         internal SwapchainKhr Swapchain;
-        internal Image[] SwapchainImages;
-        internal CommandBuffer[] CommandBuffers;
+        internal VKImage[] SwapchainImages;
         internal List<PipelineController> Pipelines = new List<PipelineController>();
+        internal Graphics Graphics;
 
         public Context(GameWindow window)
         {
@@ -90,7 +91,7 @@ namespace Vulpine
 
             var deviceCreateInfo = new DeviceCreateInfo(
                 queueCreateInfos,
-                new[] { Constant.DeviceExtension.KhrSwapchain },
+                new[] { Constant.DeviceExtension.KhrSwapchain, Constant.DeviceExtension.KhrMaintenance1 },
                 Features);
             Device = PhysicalDevice.CreateDevice(deviceCreateInfo);
 
@@ -111,62 +112,29 @@ namespace Vulpine
 
             ImageAvailableSemaphore = ToDispose(Device.CreateSemaphore());
             RenderingFinishedSemaphore = ToDispose(Device.CreateSemaphore());
+            //CommandBufferSemaphore = ToDispose(Device.CreateSemaphore());
 
             Swapchain = ToDispose(VKHelper.CreateSwapchain(this));
-            SwapchainImages = Swapchain.GetImages();
+            CacheSwapchainImages();
 
-            CommandBuffers = GraphicsCommandPool.AllocateBuffers(
-                new CommandBufferAllocateInfo(CommandBufferLevel.Primary, SwapchainImages.Length)
-            );
-        }
-
-        internal void RecordCommandBuffers()
-        {
-            var subresourceRange = new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1);
-            for (int i = 0; i < CommandBuffers.Length; i++)
-            {
-                CommandBuffer cmdBuffer = CommandBuffers[i];
-                cmdBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.SimultaneousUse));
-
-                if (PresentQueue != GraphicsQueue)
-                {
-                    var barrierFromPresentToDraw = new ImageMemoryBarrier(
-                        SwapchainImages[i], subresourceRange,
-                        Accesses.MemoryRead, Accesses.ColorAttachmentWrite,
-                        ImageLayout.Undefined, ImageLayout.PresentSrcKhr,
-                        PresentQueue.FamilyIndex, GraphicsQueue.FamilyIndex);
-
-                    cmdBuffer.CmdPipelineBarrier(
-                        PipelineStages.ColorAttachmentOutput,
-                        PipelineStages.ColorAttachmentOutput,
-                        imageMemoryBarriers: new[] { barrierFromPresentToDraw });
-                }
-
-                Window.RecordCommandBuffer(cmdBuffer, i);
-
-                if (PresentQueue != GraphicsQueue)
-                {
-                    var barrierFromDrawToPresent = new ImageMemoryBarrier(
-                        SwapchainImages[i], subresourceRange,
-                        Accesses.ColorAttachmentWrite, Accesses.MemoryRead,
-                        ImageLayout.PresentSrcKhr, ImageLayout.PresentSrcKhr,
-                        GraphicsQueue.FamilyIndex, PresentQueue.FamilyIndex);
-
-                    cmdBuffer.CmdPipelineBarrier(
-                        PipelineStages.ColorAttachmentOutput,
-                        PipelineStages.BottomOfPipe,
-                        imageMemoryBarriers: new[] { barrierFromDrawToPresent });
-                }
-
-                cmdBuffer.End();
-            }
+            Graphics = new Graphics(this);
+            Graphics.ViewportPosition = Vector2I.Zero;
+            Graphics.ViewportSize = Window.Size;
         }
 
         public override void Dispose()
         {
-            Pipelines.Dispose();
+            Pipelines.DisposeRange();
 
             base.Dispose();
+        }
+
+        internal void CacheSwapchainImages()
+        {
+            var imgs = Swapchain.GetImages();
+            SwapchainImages = new VKImage[imgs.Length];
+            for (var i = 0; i < imgs.Length; i++)
+                SwapchainImages[i] = new VKImage { Image = imgs[i] };
         }
     }
 }

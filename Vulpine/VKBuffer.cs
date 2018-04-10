@@ -8,18 +8,20 @@ using VulkanCore;
 
 namespace Vulpine
 {
-    internal class VKBuffer : IDisposable
+    public class VKBuffer : IDisposable
     {
-        private VKBuffer(VulkanCore.Buffer buffer, DeviceMemory memory, int count)
+        private VKBuffer(VulkanCore.Buffer buffer, DeviceMemory memory, int count, long size)
         {
             Buffer = buffer;
             Memory = memory;
             Count = count;
+            Size = size;
         }
 
         internal VulkanCore.Buffer Buffer { get; }
         internal DeviceMemory Memory { get; }
         internal int Count { get; }
+        internal long Size { get; }
 
         public void Dispose()
         {
@@ -43,7 +45,24 @@ namespace Vulpine
             DeviceMemory memory = ctx.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(buffer, memory, count);
+            return new VKBuffer(buffer, memory, count, size);
+        }
+
+        public static VKBuffer UniformBuffer<T>(Graphics g, int count) where T : struct
+        {
+            long size = Interop.SizeOf<T>() * count;
+
+            VulkanCore.Buffer buffer = g.Context.Device.CreateBuffer(new BufferCreateInfo(size, BufferUsages.UniformBuffer));
+            MemoryRequirements memoryRequirements = buffer.GetMemoryRequirements();
+            // We require host visible memory so we can map it and write to it directly.
+            // We require host coherent memory so that writes are visible to the GPU right after unmapping it.
+            int memoryTypeIndex = g.Context.MemoryProperties.MemoryTypes.IndexOf(
+                memoryRequirements.MemoryTypeBits,
+                MemoryProperties.HostVisible | MemoryProperties.HostCoherent);
+            DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
+            buffer.BindMemory(memory);
+
+            return new VKBuffer(buffer, memory, count, size);
         }
 
         internal static VKBuffer Index(Context ctx, int[] indices)
@@ -88,7 +107,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, indices.Length);
+            return new VKBuffer(buffer, memory, indices.Length, size);
         }
 
         internal static VKBuffer Vertex<T>(Context ctx, T[] vertices) where T : struct
@@ -133,7 +152,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, vertices.Length);
+            return new VKBuffer(buffer, memory, vertices.Length, size);
         }
 
         internal static VKBuffer Storage<T>(Context ctx, T[] data) where T : struct
@@ -178,7 +197,21 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, data.Length);
+            return new VKBuffer(buffer, memory, data.Length, size);
+        }
+
+        public void Write<T>(ref T value) where T : struct
+        {
+            IntPtr ptr = Memory.Map(0, Interop.SizeOf<T>());
+            Interop.Write(ptr, ref value);
+            Memory.Unmap();
+        }
+
+        public void Write<T>(T[] values) where T : struct
+        {
+            IntPtr ptr = Memory.Map(0, Interop.SizeOf<T>() * values.Length);
+            Interop.Write(ptr, values);
+            Memory.Unmap();
         }
     }
 }

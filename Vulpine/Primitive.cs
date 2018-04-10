@@ -8,15 +8,21 @@ using VulkanCore;
 
 namespace Vulpine
 {
-    class Primitive : EasyDisposable
+    public class Primitive : EasyDisposable
     {
-        VKBuffer Vertices;
-        VKBuffer Indices;
+        internal VKBuffer Vertices;
+        internal VKBuffer Indices;
 
-        public Primitive(Context ctx, Vertex[] vertices, int[] indices)
+        internal Primitive(Context ctx, Vertex[] vertices, int[] indices)
         {
             Vertices = ToDispose(VKBuffer.Vertex(ctx, vertices));
             Indices = ToDispose(VKBuffer.Index(ctx, indices));
+        }
+
+        public Primitive(Graphics g, Vertex[] vertices, int[] indices)
+        {
+            Vertices = ToDispose(VKBuffer.Vertex(g.Context, vertices));
+            Indices = ToDispose(VKBuffer.Index(g.Context, indices));
         }
     }
 }
