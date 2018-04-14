@@ -52,6 +52,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Angle.cs" />
     <Compile Include="CommandBufferController.cs" />
     <Compile Include="DescriptorItem.cs" />
     <Compile Include="Extensions.cs" />

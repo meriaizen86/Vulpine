@@ -19,15 +19,25 @@ namespace VulpineTest
             public Matrix4 Projection;
         }
 
-        const int BatchSize = 800;
-        const int Batches = 25;
+        [StructLayout(LayoutKind.Sequential)]
+        struct InstanceInfo
+        {
+            public Vector3 Position;
+        }
 
-        Vector2[][] Worlds;
+        const int BatchSize = 500000;
+
         PipelineController Pipeline;
-        VKBuffer BWorld;
+        VKBuffer Instances;
         VKBuffer BViewProjection;
         Texture2D Tex;
         ViewProjection VP;
+
+        Vector3[] Positions;
+        Vector3 CamPos;
+        Vector3 CamTarget = new Vector3(0f, 0f, -10f);
+        Angle CamAngle = new Angle(0f, 9f, 0f);
+        float CamDist = 30f;
 
         Dictionary<int, CommandBufferController> CommandBufferClear = new Dictionary<int, CommandBufferController>();
         Dictionary<int, CommandBufferController> CommandBufferBatch = new Dictionary<int, CommandBufferController>();
@@ -42,30 +52,27 @@ namespace VulpineTest
         {
             base.OnInit();
 
-            BWorld = VKBuffer.UniformBuffer<Vector2>(Graphics, BatchSize);
+            Positions = new Vector3[BatchSize];
+            var rand = new Random();
+            for (var i = 0; i < BatchSize; i++)
+            {
+                Positions[i] = new Vector3(-200f + (float)rand.NextDouble() * 400f, -200f + (float)rand.NextDouble() * 400f, 0f);
+            }
+
+            Instances = VKBuffer.InstanceInfo<InstanceInfo>(Graphics, BatchSize);
+            Instances.Write(Positions);
             BViewProjection = VKBuffer.UniformBuffer<ViewProjection>(Graphics, 1);
             Tex = Content.Get<Texture2D>("tex.png");
 
-            var rand = new Random();
-            Worlds = new Vector2[Batches][];
-            for (var i = 0; i < Batches; i++)
-            {
-                var narr = new Vector2[BatchSize];
-                for (var j = 0; j < BatchSize; j++)
-                {
-                    narr[j] = new Vector2(-10f + (float)rand.NextDouble() * 20f, -10f + (float)rand.NextDouble() * 20f);
-                }
-                Worlds[i] = narr;
-            }
-
             Pipeline = new PipelineController(Graphics);
-            Pipeline.DepthTest = false;
-            Pipeline.DepthWrite = false;
-            Pipeline.Shaders = new[] { "shader.vert.spv", "shader.frag.spv" };
+            Pipeline.DepthTest = true;
+            Pipeline.DepthWrite = true;
+            Pipeline.Instancing = true;
+            Pipeline.InstanceInfoType = typeof(InstanceInfo);
+            Pipeline.Shaders = new[] { "billboard.vert.spv", "billboard.frag.spv" };
             Pipeline.DescriptorItems = new[] {
-                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, BWorld),
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, BViewProjection),
-                DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, Tex)
+                DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, Tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
         }
 
@@ -82,8 +89,10 @@ namespace VulpineTest
 
             if (tick % 15 == 0)
                 Title = $"FPS: {ActualFPS}";
-            
-            VP.View = Matrix4.CreateLookAt(new Vector3(1f, 8f, 8f), Vector3.Zero, Vector3.UnitZ);
+
+            CamAngle = new Angle(0f, CamAngle.Pitch, CamAngle.Yaw + 0.2f);
+            CamPos = CamAngle.Forward * CamDist;
+            VP.View = Matrix4.CreateLookAt(CamPos, CamTarget);
             VP.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.ToRad(80f), (float)Width / (float)Height, 0.1f, 1000f);
             BViewProjection.Write(ref VP);
         }
@@ -109,7 +118,7 @@ namespace VulpineTest
             CommandBufferBatch[swapchainImageIndex] = cb = new CommandBufferController(Graphics, Graphics.GetSwapchainImage(swapchainImageIndex));
             cb.Begin();
             cb.BeginPass(Pipeline, swapchainImageIndex);
-            cb.Draw(Graphics.Square, instances: BatchSize);
+            cb.Draw(Graphics.Square, Instances, BatchSize);
             cb.EndPass();
             cb.End();
         }
@@ -119,11 +128,7 @@ namespace VulpineTest
             base.OnDrawToSwapchainImage(swapchainImageIndex);
 
             CommandBufferClear[swapchainImageIndex].Submit();
-            for (var i = 0; i < Batches; i++)
-            {
-                BWorld.Write(Worlds[i]);
-                CommandBufferBatch[swapchainImageIndex].Submit(true);
-            }
+            CommandBufferBatch[swapchainImageIndex].Submit(false);
         }
     }
 }

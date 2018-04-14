@@ -10,23 +10,36 @@ namespace Vulpine
 {
     public class VKBuffer : IDisposable
     {
-        private VKBuffer(VulkanCore.Buffer buffer, DeviceMemory memory, int count, long size)
+        private VKBuffer(Context ctx, VulkanCore.Buffer buffer, DeviceMemory memory, int count, long size, bool writeUsingStagingBuffer = false, VulkanCore.Buffer stagingBuffer = null, DeviceMemory stagingMemory = null)
         {
+            Context = ctx;
             Buffer = buffer;
             Memory = memory;
             Count = count;
             Size = size;
+            WriteUsingStagingBuffer = writeUsingStagingBuffer;
+            StagingBuffer = stagingBuffer;
+            StagingMemory = stagingMemory;
         }
 
+        Context Context;
         internal VulkanCore.Buffer Buffer { get; }
+        VulkanCore.Buffer StagingBuffer;
+        DeviceMemory StagingMemory;
         internal DeviceMemory Memory { get; }
         internal int Count { get; }
         internal long Size { get; }
+        bool WriteUsingStagingBuffer;
 
         public void Dispose()
         {
             Memory.Dispose();
             Buffer.Dispose();
+            if (WriteUsingStagingBuffer)
+            {
+                StagingMemory?.Dispose();
+                StagingBuffer?.Dispose();
+            }
         }
 
         public static implicit operator VulkanCore.Buffer(VKBuffer value) => value.Buffer;
@@ -45,7 +58,7 @@ namespace Vulpine
             DeviceMemory memory = ctx.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(buffer, memory, count, size);
+            return new VKBuffer(ctx, buffer, memory, count, size);
         }
 
         public static VKBuffer UniformBuffer<T>(Graphics g, int count) where T : struct
@@ -62,7 +75,7 @@ namespace Vulpine
             DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(buffer, memory, count, size);
+            return new VKBuffer(g.Context, buffer, memory, count, size);
         }
 
         internal static VKBuffer Index(Context ctx, int[] indices)
@@ -107,7 +120,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, indices.Length, size);
+            return new VKBuffer(ctx, buffer, memory, indices.Length, size);
         }
 
         internal static VKBuffer Vertex<T>(Context ctx, T[] vertices) where T : struct
@@ -152,7 +165,32 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, vertices.Length, size);
+            return new VKBuffer(ctx, buffer, memory, vertices.Length, size);
+        }
+
+        public static VKBuffer InstanceInfo<T>(Graphics g, int count) where T : struct
+        {
+            long size = count * Interop.SizeOf<T>();
+
+            // Create a staging buffer that is writable by host.
+            var stagingBuffer = g.Context.Device.CreateBuffer(new BufferCreateInfo(size, BufferUsages.TransferSrc));
+            MemoryRequirements stagingReq = stagingBuffer.GetMemoryRequirements();
+            int stagingMemoryTypeIndex = g.Context.MemoryProperties.MemoryTypes.IndexOf(
+                stagingReq.MemoryTypeBits,
+                MemoryProperties.HostVisible | MemoryProperties.HostCoherent);
+            DeviceMemory stagingMemory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(stagingReq.Size, stagingMemoryTypeIndex));
+            stagingBuffer.BindMemory(stagingMemory);
+
+            // Create a device local buffer where the vertex data will be copied and which will be used for rendering.
+            VulkanCore.Buffer buffer = g.Context.Device.CreateBuffer(new BufferCreateInfo(size, BufferUsages.VertexBuffer | BufferUsages.TransferDst));
+            MemoryRequirements req = buffer.GetMemoryRequirements();
+            int memoryTypeIndex = g.Context.MemoryProperties.MemoryTypes.IndexOf(
+                req.MemoryTypeBits,
+                MemoryProperties.DeviceLocal);
+            DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(req.Size, memoryTypeIndex));
+            buffer.BindMemory(memory);
+
+            return new VKBuffer(g.Context, buffer, memory, count, size, true, stagingBuffer, stagingMemory);
         }
 
         internal static VKBuffer Storage<T>(Context ctx, T[] data) where T : struct
@@ -197,11 +235,35 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(buffer, memory, data.Length, size);
+            return new VKBuffer(ctx, buffer, memory, data.Length, size);
         }
 
         public void Write<T>(ref T value) where T : struct
         {
+            if (WriteUsingStagingBuffer)
+            {
+                MemoryRequirements stagingReq = StagingBuffer.GetMemoryRequirements();
+                IntPtr vertexPtr = StagingMemory.Map(0, stagingReq.Size);
+                Interop.Write(vertexPtr, ref value);
+                StagingMemory.Unmap();
+
+                // Copy the data from staging buffers to device local buffers.
+                CommandBuffer cmdBuffer = Context.GraphicsCommandPool.AllocateBuffers(new CommandBufferAllocateInfo(CommandBufferLevel.Primary, 1))[0];
+                cmdBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
+                cmdBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
+                cmdBuffer.End();
+
+                // Submit.
+                Fence fence = Context.Device.CreateFence();
+                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { cmdBuffer }), fence);
+                fence.Wait();
+
+                // Cleanup.
+                fence.Dispose();
+                cmdBuffer.Dispose();
+
+                return;
+            }
             IntPtr ptr = Memory.Map(0, Interop.SizeOf<T>());
             Interop.Write(ptr, ref value);
             Memory.Unmap();
@@ -209,6 +271,31 @@ namespace Vulpine
 
         public void Write<T>(T[] values) where T : struct
         {
+            if (WriteUsingStagingBuffer)
+            {
+                MemoryRequirements stagingReq = StagingBuffer.GetMemoryRequirements();
+                IntPtr vertexPtr = StagingMemory.Map(0, stagingReq.Size);
+                Interop.Write(vertexPtr, values);
+                StagingMemory.Unmap();
+
+                // Copy the data from staging buffers to device local buffers.
+                CommandBuffer cmdBuffer = Context.GraphicsCommandPool.AllocateBuffers(new CommandBufferAllocateInfo(CommandBufferLevel.Primary, 1))[0];
+                cmdBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
+                cmdBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
+                cmdBuffer.End();
+
+                // Submit.
+                Fence fence = Context.Device.CreateFence();
+                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { cmdBuffer }), fence);
+                fence.Wait();
+
+                // Cleanup.
+                fence.Dispose();
+                cmdBuffer.Dispose();
+
+                return;
+            }
+
             IntPtr ptr = Memory.Map(0, Interop.SizeOf<T>() * values.Length);
             Interop.Write(ptr, values);
             Memory.Unmap();

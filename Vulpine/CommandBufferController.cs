@@ -83,7 +83,7 @@ namespace Vulpine
                 pipeline.Framebuffers[frameBufferIndex],
                 new Rect2D(Graphics.ViewportPosition.X, Graphics.ViewportPosition.Y, Graphics.ViewportSize.X, Graphics.ViewportSize.Y),
                 new ClearColorValue(),
-                new ClearDepthStencilValue()
+                new ClearDepthStencilValue(1f, 0)
             );
             CommandBuffer.CmdBeginRenderPass(renderPassBeginInfo);
             CommandBuffer.CmdBindDescriptorSet(PipelineBindPoint.Graphics, pipeline.PipelineLayout, pipeline.DescriptorSet);
@@ -111,6 +111,13 @@ namespace Vulpine
         public void Draw(Primitive prim, int instances = 1, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
         {
             CommandBuffer.CmdBindVertexBuffer(prim.Vertices);
+            CommandBuffer.CmdBindIndexBuffer(prim.Indices);
+            CommandBuffer.CmdDrawIndexed(prim.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
+        }
+
+        public void Draw(Primitive prim, VKBuffer instanceInfo, int instances, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
+        {
+            CommandBuffer.CmdBindVertexBuffers(0, 2, new[] { prim.Vertices.Buffer, instanceInfo.Buffer }, new[] { 0L, 0L });
             CommandBuffer.CmdBindIndexBuffer(prim.Indices);
             CommandBuffer.CmdDrawIndexed(prim.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
         }

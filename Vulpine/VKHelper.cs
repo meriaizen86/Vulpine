@@ -164,7 +164,7 @@ namespace Vulpine
             return imageViews;
         }
 
-        public static RenderPass CreateRenderPass(Graphics g, Texture2D depthStencil)
+        public static RenderPass CreateRenderPass(Graphics g, Texture2D depthStencil, bool clearDepthOnBeginPass)
         {
             var subpasses = new[]
             {
@@ -196,7 +196,7 @@ namespace Vulpine
                 {
                     Format = depthStencil.Format,
                     Samples = samples,
-                    LoadOp = AttachmentLoadOp.Load,
+                    LoadOp = clearDepthOnBeginPass ? AttachmentLoadOp.Clear : AttachmentLoadOp.Load,
                     StoreOp = AttachmentStoreOp.DontCare,
                     StencilLoadOp = AttachmentLoadOp.DontCare,
                     StencilStoreOp = AttachmentStoreOp.DontCare,
@@ -294,8 +294,11 @@ namespace Vulpine
             return framebuffers;
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType)
         {
+            if (instancing && instanceInfoType == null)
+                throw new NullReferenceException("Instance info type cannot be null");
+
             var shaderStageCreateInfos = new PipelineShaderStageCreateInfo[shaderNames.Length];
             for (var i = 0; i < shaderNames.Length; i++)
             {
@@ -315,14 +318,96 @@ namespace Vulpine
                 
             }
 
+            var fields = typeof(Vertex).GetFields();
+            var offset = 0;
+            List<VertexInputAttributeDescription> vertexAttributes = new List<VertexInputAttributeDescription>(fields.Length);
+            for (var i = 0; i < fields.Length; i++)
+            {
+                var ftype = fields[i].FieldType;
+                if (ftype == typeof(Vector3))
+                {
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32SFloat, offset));
+                    offset += 12;
+                }
+                else if (ftype == typeof(Vector2))
+                {
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32SFloat, offset));
+                    offset += 8;
+                }
+                else if (ftype == typeof(float))
+                {
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32SFloat, offset));
+                    offset += 4;
+                }
+                else if (ftype == typeof(Matrix4))
+                {
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
+                    i++;
+                    offset += 16;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
+                    i++;
+                    offset += 16;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
+                    i++;
+                    offset += 16;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
+                    offset += 16;
+                }
+                else throw new Exception("Field " + fields[i] + " of vertex struct is an illegal type");
+            }
+            var vertexFieldsLength = fields.Length;
+
+            if (instancing)
+            {
+                fields = instanceInfoType.GetFields();
+                offset = 0;
+                for (var i = 0; i < fields.Length; i++)
+                {
+                    var ftype = fields[i].FieldType;
+                    if (ftype == typeof(Vector3))
+                    {
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32SFloat, offset));
+                        offset += 12;
+                    }
+                    else if (ftype == typeof(Vector2))
+                    {
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32SFloat, offset));
+                        offset += 8;
+                    }
+                    else if (ftype == typeof(float))
+                    {
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32SFloat, offset));
+                        offset += 4;
+                    }
+                    else if (ftype == typeof(Matrix4))
+                    {
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
+                        i++;
+                        offset += 16;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
+                        i++;
+                        offset += 16;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
+                        i++;
+                        offset += 16;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
+                        offset += 16;
+                    }
+                    else throw new Exception("Field " + fields[i] + " of instance info struct is an illegal type");
+                }
+            }
+
             var vertexInputStateCreateInfo = new PipelineVertexInputStateCreateInfo(
-                new[] { new VertexInputBindingDescription(0, Interop.SizeOf<Vertex>(), VertexInputRate.Vertex) },
+                (instancing ? new[]
+                {
+                    new VertexInputBindingDescription(0, Interop.SizeOf<Vertex>(), VertexInputRate.Vertex),
+                    new VertexInputBindingDescription(1, System.Runtime.InteropServices.Marshal.SizeOf(instanceInfoType), VertexInputRate.Instance)
+                } :
                 new[]
                 {
-                    new VertexInputAttributeDescription(0, 0, Format.R32G32B32SFloat, 0),  // Position.
-                    new VertexInputAttributeDescription(1, 0, Format.R32G32B32SFloat, 12), // Normal.
-                    new VertexInputAttributeDescription(2, 0, Format.R32G32SFloat, 24)     // TexCoord.
-                }
+                    new VertexInputBindingDescription(0, Interop.SizeOf<Vertex>(), VertexInputRate.Vertex)
+                }),
+                vertexAttributes.ToArray()
             );
             var inputAssemblyStateCreateInfo = new PipelineInputAssemblyStateCreateInfo(PrimitiveTopology.TriangleList);
             var viewportStateCreateInfo = new PipelineViewportStateCreateInfo(
@@ -412,7 +497,8 @@ namespace Vulpine
                 new DescriptorPoolCreateInfo(sizes.Length, sizes));
         }
 
-        public static DescriptorSet CreateDescriptorSet(DescriptorPool pool, DescriptorSetLayout setLayout, DescriptorItem[] items)
+        static List<Sampler> _SamplerCollection = new List<Sampler>();
+        public static DescriptorSet CreateDescriptorSet(DescriptorPool pool, DescriptorSetLayout setLayout, DescriptorItem[] items, out Sampler[] samplers)
         {
             DescriptorSet descriptorSet = pool.AllocateSets(new DescriptorSetAllocateInfo(1, setLayout))[0];
 
@@ -427,8 +513,9 @@ namespace Vulpine
                             bufferInfo: new[] { new DescriptorBufferInfo(item.Buffer, 0, item.Buffer.Size) });
                         break;
                     case DescriptorItem.DescriptorType.CombinedImageSampler:
+                        _SamplerCollection.Add(item.Sampler);
                         writeDescriptorSets[i] = new WriteDescriptorSet(descriptorSet, i, 0, 1, DescriptorType.CombinedImageSampler,
-                            imageInfo: new[] { new DescriptorImageInfo(item.Texture.Sampler, item.Texture.View, VulkanCore.ImageLayout.General) });
+                            imageInfo: new[] { new DescriptorImageInfo(item.Sampler, item.Texture.View, VulkanCore.ImageLayout.General) });
                         break;
                     default:
                         throw new NotImplementedException($"No case for {item.Type}");
@@ -436,6 +523,9 @@ namespace Vulpine
             }
 
             pool.UpdateSets(writeDescriptorSets);
+
+            samplers = _SamplerCollection.ToArray();
+            _SamplerCollection.Clear();
             return descriptorSet;
         }
     }

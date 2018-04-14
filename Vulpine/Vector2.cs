@@ -15,6 +15,31 @@ namespace Vulpine
 
         public float X, Y;
 
+        public float Angle
+        {
+            get
+            {
+                return MathHelper.DAtan2(Y, X);
+            }
+        }
+
+        public float Distance
+        {
+            get
+            {
+                return (float)Math.Sqrt(X * X + Y * Y);
+            }
+        }
+
+        public Vector2 Normalized
+        {
+            get
+            {
+                var dis = Distance;
+                return new Vector2(X / dis, Y / dis);
+            }
+        }
+
         public Vector2(float x, float y)
         {
             X = x;

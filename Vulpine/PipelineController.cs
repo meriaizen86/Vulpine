@@ -20,10 +20,14 @@ namespace Vulpine
         internal DescriptorSet DescriptorSet;
         internal Pipeline Pipeline;
         internal Graphics Graphics;
+        internal Sampler[] UsingSamplers;
 
         public string[] Shaders = { };
         public DescriptorItem[] DescriptorItems = { };
         public bool DepthTest = true, DepthWrite = true;
+        public bool ClearDepthOnBeginPass = true;
+        public bool Instancing = false;
+        public Type InstanceInfoType = null;
 
         public PipelineController(Graphics g)
         {
@@ -35,6 +39,7 @@ namespace Vulpine
         {
             DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
+            UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
             DepthStencil?.Dispose();
             RenderPass?.Dispose();
@@ -45,18 +50,19 @@ namespace Vulpine
             DescriptorSetLayout = VKHelper.CreateDescriptorSetLayout(Graphics, DescriptorItems);
             PipelineLayout = VKHelper.CreatePipelineLayout(Graphics, DescriptorSetLayout);
             DescriptorPool = VKHelper.CreateDescriptorPool(Graphics, DescriptorItems);
-            DescriptorSet = VKHelper.CreateDescriptorSet(DescriptorPool, DescriptorSetLayout, DescriptorItems);
+            DescriptorSet = VKHelper.CreateDescriptorSet(DescriptorPool, DescriptorSetLayout, DescriptorItems, out UsingSamplers);
             DepthStencil = Texture2D.DepthStencil(Graphics.Context, Graphics.ViewportSize.X, Graphics.ViewportSize.Y);
-            RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil);
+            RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil, ClearDepthOnBeginPass);
             ImageViews = VKHelper.CreateImageViews(Graphics);
             Framebuffers = VKHelper.CreateFramebuffers(Graphics, RenderPass, ImageViews, DepthStencil);
-            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite);
+            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType);
         }
 
         public void Dispose()
         {
             DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
+            UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
             DepthStencil?.Dispose();
             RenderPass?.Dispose();

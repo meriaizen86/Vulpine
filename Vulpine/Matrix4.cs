@@ -33,9 +33,30 @@ namespace Vulpine
         public float M43 => InternalMatrix.M43;
         public float M44 => InternalMatrix.M44;
 
+        public Vector3 Translation
+        {
+            get
+            {
+                var t = InternalMatrix.Translation;
+                return new Vector3(t.X, t.Y, t.Z);
+            }
+        }
+
         public static Matrix4 operator *(Matrix4 a, Matrix4 b)
         {
             return new Matrix4 { InternalMatrix = a.InternalMatrix * b.InternalMatrix };
+        }
+
+        public static Vector3 operator *(Matrix4 a, Vector3 b)
+        {
+            var comb = (a.InternalMatrix * Matrix4x4.CreateTranslation(new System.Numerics.Vector3(b.X, b.Y, b.Z))).Translation;
+            return new Vector3(comb.X, comb.Y, comb.Z);
+        }
+
+        public static Vector3 operator *(Vector3 b, Matrix4 a)
+        {
+            var comb = (Matrix4x4.CreateTranslation(new System.Numerics.Vector3(b.X, b.Y, b.Z)) * a.InternalMatrix).Translation;
+            return new Vector3(comb.X, comb.Y, comb.Z);
         }
 
         public static Matrix4 CreateWorld(Vector3 pos, Vector3 forward, Vector3 up)
@@ -55,17 +76,17 @@ namespace Vulpine
 
         public static Matrix4 CreateRotationX(float angle)
         {
-            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationX(angle) };
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationX(MathHelper.ToRad(angle)) };
         }
 
         public static Matrix4 CreateRotationY(float angle)
         {
-            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationY(angle) };
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationY(MathHelper.ToRad(angle)) };
         }
 
         public static Matrix4 CreateRotationZ(float angle)
         {
-            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationZ(angle) };
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateRotationZ(MathHelper.ToRad(angle)) };
         }
 
         public static Matrix4 CreatePerspectiveFieldOfView(float fov, float aspectRatio, float nearPlane, float farPlane)
@@ -73,9 +94,19 @@ namespace Vulpine
             return new Matrix4 { InternalMatrix = Matrix4x4.CreatePerspectiveFieldOfView(fov, aspectRatio, nearPlane, farPlane) };
         }
 
-        public static Matrix4 CreateLookAt(Vector3 pos, Vector3 target, Vector3 up)
+        public static Matrix4 CreateLookAt(Vector3 pos, Vector3 target)
         {
-            return new Matrix4 { InternalMatrix = Matrix4x4.CreateLookAt((System.Numerics.Vector3)pos, (System.Numerics.Vector3)target, (System.Numerics.Vector3)up) };
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateLookAt((System.Numerics.Vector3)pos, (System.Numerics.Vector3)target, System.Numerics.Vector3.UnitZ) };
+        }
+
+        public static Matrix4 CreateBillboardRotation(Vector3 camPos, Vector3 camTarget)
+        {
+            var ang = (camTarget - camPos).Angle;
+            return new Matrix4 {
+                InternalMatrix =
+                    Matrix4x4.CreateRotationX(MathHelper.ToRad(-90f - ang.Pitch)) *
+                    Matrix4x4.CreateRotationZ(MathHelper.ToRad(ang.Yaw + 90f))
+            };
         }
     }
 }

@@ -173,7 +173,7 @@ namespace Vulpine
 
         protected virtual void OnDrawToSwapchainImage(int swapchainImageIndex)
         {
-
+            
         }
     }
 }
