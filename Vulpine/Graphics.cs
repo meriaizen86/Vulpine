@@ -8,14 +8,19 @@ using VulkanCore;
 
 namespace Vulpine
 {
-    public class Graphics
+    public class Graphics : IDisposable
     {
         static ImageSubresourceRange DefaultSubresourceRange = new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1);
 
         internal Context Context;
+        internal RenderPass RenderPass;
+        internal Texture2D DepthStencil;
+        internal ImageView[] ImageViews;
+        internal Framebuffer[] Framebuffers;
         public Vector2I ViewportPosition;
         public Vector2I ViewportSize;
         public int Samples = 1;
+        public bool ClearDepthOnBeginPass = true;
 
 
         public Primitive Square { get; private set; }
@@ -44,6 +49,27 @@ namespace Vulpine
                 new int[] {
                     0, 1, 2
                 });
+        }
+
+        public void Build()
+        {
+            DepthStencil?.Dispose();
+            RenderPass?.Dispose();
+            ImageViews?.DisposeRange();
+            Framebuffers?.DisposeRange();
+
+            DepthStencil = Texture2D.DepthStencil(Context, ViewportSize.X, ViewportSize.Y);
+            RenderPass = VKHelper.CreateRenderPass(this, DepthStencil, ClearDepthOnBeginPass);
+            ImageViews = VKHelper.CreateImageViews(this);
+            Framebuffers = VKHelper.CreateFramebuffers(this, RenderPass, ImageViews, DepthStencil);
+        }
+
+        public void Dispose()
+        {
+            DepthStencil?.Dispose();
+            RenderPass?.Dispose();
+            ImageViews?.DisposeRange();
+            Framebuffers?.DisposeRange();
         }
 
         public VKImage GetSwapchainImage(int index)

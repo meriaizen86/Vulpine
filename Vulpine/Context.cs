@@ -117,9 +117,10 @@ namespace Vulpine
             Swapchain = ToDispose(VKHelper.CreateSwapchain(this));
             CacheSwapchainImages();
 
-            Graphics = new Graphics(this);
+            Graphics = ToDispose(new Graphics(this));
             Graphics.ViewportPosition = Vector2I.Zero;
             Graphics.ViewportSize = Window.Size;
+            Graphics.Build();
         }
 
         public override void Dispose()

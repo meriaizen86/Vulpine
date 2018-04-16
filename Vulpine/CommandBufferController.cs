@@ -80,7 +80,7 @@ namespace Vulpine
         public void BeginPass(PipelineController pipeline, int frameBufferIndex)
         {
             var renderPassBeginInfo = new RenderPassBeginInfo(
-                pipeline.Framebuffers[frameBufferIndex],
+                Graphics.Framebuffers[frameBufferIndex],
                 new Rect2D(Graphics.ViewportPosition.X, Graphics.ViewportPosition.Y, Graphics.ViewportSize.X, Graphics.ViewportSize.Y),
                 new ClearColorValue(),
                 new ClearDepthStencilValue(1f, 0)

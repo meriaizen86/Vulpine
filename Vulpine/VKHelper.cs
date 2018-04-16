@@ -294,7 +294,7 @@ namespace Vulpine
             return framebuffers;
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
         {
             if (instancing && instanceInfoType == null)
                 throw new NullReferenceException("Instance info type cannot be null");
@@ -465,7 +465,7 @@ namespace Vulpine
                 new[] { colorBlendAttachmentState });
 
             var pipelineCreateInfo = new GraphicsPipelineCreateInfo(
-                pl, rp, 0,
+                pl, g.RenderPass, 0,
                 shaderStageCreateInfos,
                 inputAssemblyStateCreateInfo,
                 vertexInputStateCreateInfo,
