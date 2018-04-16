@@ -26,6 +26,7 @@ namespace Vulpine
         public DescriptorItem[] DescriptorItems = { };
         public bool DepthTest = true, DepthWrite = true;
         public bool ClearDepthOnBeginPass = true;
+        public BlendMode BlendMode = BlendMode.Alpha;
         public bool Instancing = false;
         public Type InstanceInfoType = null;
 
@@ -55,7 +56,7 @@ namespace Vulpine
             RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil, ClearDepthOnBeginPass);
             ImageViews = VKHelper.CreateImageViews(Graphics);
             Framebuffers = VKHelper.CreateFramebuffers(Graphics, RenderPass, ImageViews, DepthStencil);
-            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType);
+            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType, BlendMode);
         }
 
         public void Dispose()

@@ -67,6 +67,7 @@ namespace VulpineTest
             Pipeline = new PipelineController(Graphics);
             Pipeline.DepthTest = true;
             Pipeline.DepthWrite = true;
+            Pipeline.BlendMode = BlendMode.Alpha;
             Pipeline.Instancing = true;
             Pipeline.InstanceInfoType = typeof(InstanceInfo);
             Pipeline.Shaders = new[] { "billboard.vert.spv", "billboard.frag.spv" };

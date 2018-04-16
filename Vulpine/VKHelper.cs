@@ -294,7 +294,7 @@ namespace Vulpine
             return framebuffers;
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
         {
             if (instancing && instanceInfoType == null)
                 throw new NullReferenceException("Instance info type cannot be null");
@@ -452,13 +452,13 @@ namespace Vulpine
             };
             var colorBlendAttachmentState = new PipelineColorBlendAttachmentState
             {
-                SrcColorBlendFactor = BlendFactor.SrcAlpha,
-                DstColorBlendFactor = BlendFactor.OneMinusSrcAlpha,
-                ColorBlendOp = BlendOp.Add,
-                SrcAlphaBlendFactor = BlendFactor.One,
-                DstAlphaBlendFactor = BlendFactor.Zero,
-                AlphaBlendOp = BlendOp.Add,
-                ColorWriteMask = ColorComponents.All,
+                SrcColorBlendFactor = BlendMode.GetBlendFactor(blendMode.SrcColorFactor),
+                DstColorBlendFactor = BlendMode.GetBlendFactor(blendMode.DstColorFactor),
+                ColorBlendOp = BlendMode.GetBlendOp(blendMode.ColorOp),
+                SrcAlphaBlendFactor = BlendMode.GetBlendFactor(blendMode.SrcAlphaFactor),
+                DstAlphaBlendFactor = BlendMode.GetBlendFactor(blendMode.DstAlphaFactor),
+                AlphaBlendOp = BlendMode.GetBlendOp(blendMode.AlphaOp),
+                ColorWriteMask = BlendMode.GetColorWriteMask(blendMode.Mask),
                 BlendEnable = true
             };
             var colorBlendStateCreateInfo = new PipelineColorBlendStateCreateInfo(
