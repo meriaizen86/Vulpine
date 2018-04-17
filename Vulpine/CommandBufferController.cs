@@ -77,10 +77,10 @@ namespace Vulpine
             CommandBuffer.End();
         }
 
-        public void BeginPass(PipelineController pipeline, int frameBufferIndex)
+        public void BeginPass(PipelineController pipeline, VKImage image)
         {
             var renderPassBeginInfo = new RenderPassBeginInfo(
-                Graphics.Framebuffers[frameBufferIndex],
+                image.Framebuffer,
                 new Rect2D(Graphics.ViewportPosition.X, Graphics.ViewportPosition.Y, Graphics.ViewportSize.X, Graphics.ViewportSize.Y),
                 new ClearColorValue(),
                 new ClearDepthStencilValue(1f, 0)

@@ -20,7 +20,8 @@ namespace Vulpine
         protected T ToDispose<T>(T c)
             where T : IDisposable
         {
-            DisposableChildren.Add(c);
+            if (!DisposableChildren.Contains(c))
+                DisposableChildren.Add(c);
             return c;
         }
 

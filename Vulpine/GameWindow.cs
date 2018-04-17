@@ -60,7 +60,7 @@ namespace Vulpine
             Form = ToDispose(new Form
             {
                 Text = title,
-                FormBorderStyle = FormBorderStyle.Sizable,
+                FormBorderStyle = FormBorderStyle.Fixed3D,
                 ClientSize = new System.Drawing.Size(size.X, size.Y),
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimumSize = new System.Drawing.Size(200, 200),
@@ -72,6 +72,7 @@ namespace Vulpine
             Form.Resize += (sender, e) =>
             {
                 OnResize();
+                AfterResize();
             };
 
             Context = ToDispose(new Context(this));
@@ -80,8 +81,8 @@ namespace Vulpine
             OnBuildPipelines();
             
             OnLoad();
-            for (var i = 0; i < Context.SwapchainImages.Length; i++)
-                OnNewSwapchainImage(i);
+            foreach (var img in Context.SwapchainImages)
+                OnCreateSwapchainImage(img);
         }
         
         public void Run()
@@ -114,25 +115,35 @@ namespace Vulpine
                 Draw();
                 ActualFPS = 1.0 / elapsed.TotalSeconds;
             }
+
+            foreach (var img in Context.SwapchainImages)
+                OnDeleteSwapchainImage(img);
+            OnFinish();
         }
 
         protected virtual void OnResize()
         {
-            Context.GraphicsCommandPool.Reset();
-            Context.ComputeCommandPool.Reset();
+            
+        }
 
-            Context.Swapchain?.Dispose();
-            Context.Swapchain = ToDispose(VKHelper.CreateSwapchain(Context));
-            Context.SwapchainImages?.DisposeRange();
-            Context.CacheSwapchainImages();
+        void AfterResize()
+        {
+            foreach (var img in Context.SwapchainImages)
+                OnDeleteSwapchainImage(img);
 
+            Context.Build();
             OnBuildPipelines();
 
-            for (var i = 0; i < Context.SwapchainImages.Length; i++)
-                OnNewSwapchainImage(i);
+            foreach (var img in Context.SwapchainImages)
+                OnCreateSwapchainImage(img);
         }
 
         protected virtual void OnInit()
+        {
+
+        }
+
+        protected virtual void OnFinish()
         {
 
         }
@@ -147,12 +158,17 @@ namespace Vulpine
             
         }
 
-        protected virtual void OnNewSwapchainImage(int index)
+        protected virtual void OnCreateSwapchainImage(VKImage image)
         {
 
         }
 
         protected virtual void OnUpdate(int tick)
+        {
+
+        }
+
+        protected virtual void OnDeleteSwapchainImage(VKImage image)
         {
 
         }
@@ -163,7 +179,7 @@ namespace Vulpine
             int imageIndex = Context.Swapchain.AcquireNextImage(-1, Context.ImageAvailableSemaphore);
 
             Context.GraphicsQueue.Submit(new SubmitInfo(waitSemaphores: new[] { Context.ImageAvailableSemaphore }, waitDstStageMask: new[] { PipelineStages.ColorAttachmentOutput }));
-            OnDrawToSwapchainImage(imageIndex);
+            OnDrawToSwapchainImage(Context.SwapchainImages[imageIndex]);
             Context.GraphicsQueue.WaitIdle();
             Context.GraphicsQueue.Submit(new SubmitInfo(signalSemaphores: new[] { Context.RenderingFinishedSemaphore }));
 
@@ -171,7 +187,7 @@ namespace Vulpine
             Context.PresentQueue.PresentKhr(Context.RenderingFinishedSemaphore, Context.Swapchain, imageIndex);
         }
 
-        protected virtual void OnDrawToSwapchainImage(int swapchainImageIndex)
+        protected virtual void OnDrawToSwapchainImage(VKImage image)
         {
             
         }

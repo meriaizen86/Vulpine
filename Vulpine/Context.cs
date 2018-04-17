@@ -34,6 +34,11 @@ namespace Vulpine
         internal VKImage[] SwapchainImages;
         internal List<PipelineController> Pipelines = new List<PipelineController>();
         internal Graphics Graphics;
+        internal RenderPass RenderPass;
+        internal Texture2D DepthStencil;
+        int GraphicsQueueFamilyIndex = -1;
+        int ComputeQueueFamilyIndex = -1;
+        int PresentQueueFamilyIndex = -1;
 
         public Context(GameWindow window)
         {
@@ -41,11 +46,7 @@ namespace Vulpine
             Instance = ToDispose(VKHelper.CreateInstance());
             DebugReportCallback = ToDispose(VKHelper.CreateDebugReportCallback(Instance));
             Surface = ToDispose(VKHelper.CreateSurface(Instance, Window.Handle));
-
-
-            int graphicsQueueFamilyIndex = -1;
-            int computeQueueFamilyIndex = -1;
-            int presentQueueFamilyIndex = -1;
+            
             foreach (PhysicalDevice physicalDevice in Instance.EnumeratePhysicalDevices())
             {
                 QueueFamilyProperties[] queueFamilyProperties = physicalDevice.GetQueueFamilyProperties();
@@ -53,18 +54,18 @@ namespace Vulpine
                 {
                     if (queueFamilyProperties[i].QueueFlags.HasFlag(Queues.Graphics))
                     {
-                        if (graphicsQueueFamilyIndex == -1) graphicsQueueFamilyIndex = i;
-                        if (computeQueueFamilyIndex == -1) computeQueueFamilyIndex = i;
+                        if (GraphicsQueueFamilyIndex == -1) GraphicsQueueFamilyIndex = i;
+                        if (ComputeQueueFamilyIndex == -1) ComputeQueueFamilyIndex = i;
 
                         if (physicalDevice.GetSurfaceSupportKhr(i, Surface) &&
                             VKHelper.GetPresentationSupport(physicalDevice, i))
                         {
-                            presentQueueFamilyIndex = i;
+                            PresentQueueFamilyIndex = i;
                         }
 
-                        if (graphicsQueueFamilyIndex != -1 &&
-                            computeQueueFamilyIndex != -1 &&
-                            presentQueueFamilyIndex != -1)
+                        if (GraphicsQueueFamilyIndex != -1 &&
+                            ComputeQueueFamilyIndex != -1 &&
+                            PresentQueueFamilyIndex != -1)
                         {
                             PhysicalDevice = physicalDevice;
                             break;
@@ -83,11 +84,11 @@ namespace Vulpine
             Properties = PhysicalDevice.GetProperties();
 
             // Create a logical device.
-            bool sameGraphicsAndPresent = graphicsQueueFamilyIndex == presentQueueFamilyIndex;
+            bool sameGraphicsAndPresent = GraphicsQueueFamilyIndex == PresentQueueFamilyIndex;
             var queueCreateInfos = new DeviceQueueCreateInfo[sameGraphicsAndPresent ? 1 : 2];
-            queueCreateInfos[0] = new DeviceQueueCreateInfo(graphicsQueueFamilyIndex, 1, 1.0f);
+            queueCreateInfos[0] = new DeviceQueueCreateInfo(GraphicsQueueFamilyIndex, 1, 1.0f);
             if (!sameGraphicsAndPresent)
-                queueCreateInfos[1] = new DeviceQueueCreateInfo(presentQueueFamilyIndex, 1, 1.0f);
+                queueCreateInfos[1] = new DeviceQueueCreateInfo(PresentQueueFamilyIndex, 1, 1.0f);
 
             var deviceCreateInfo = new DeviceCreateInfo(
                 queueCreateInfos,
@@ -96,31 +97,45 @@ namespace Vulpine
             Device = PhysicalDevice.CreateDevice(deviceCreateInfo);
 
             // Get queue(s).
-            GraphicsQueue = Device.GetQueue(graphicsQueueFamilyIndex);
-            ComputeQueue = computeQueueFamilyIndex == graphicsQueueFamilyIndex
+            GraphicsQueue = Device.GetQueue(GraphicsQueueFamilyIndex);
+            ComputeQueue = ComputeQueueFamilyIndex == GraphicsQueueFamilyIndex
                 ? GraphicsQueue
-                : Device.GetQueue(computeQueueFamilyIndex);
-            PresentQueue = presentQueueFamilyIndex == graphicsQueueFamilyIndex
+                : Device.GetQueue(ComputeQueueFamilyIndex);
+            PresentQueue = PresentQueueFamilyIndex == GraphicsQueueFamilyIndex
                 ? GraphicsQueue
-                : Device.GetQueue(presentQueueFamilyIndex);
-
-            // Create command pool(s).
-            GraphicsCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(graphicsQueueFamilyIndex)));
-            ComputeCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(computeQueueFamilyIndex)));
+                : Device.GetQueue(PresentQueueFamilyIndex);
 
             Content = new Content(this);
 
-            ImageAvailableSemaphore = ToDispose(Device.CreateSemaphore());
-            RenderingFinishedSemaphore = ToDispose(Device.CreateSemaphore());
-            //CommandBufferSemaphore = ToDispose(Device.CreateSemaphore());
-
-            Swapchain = ToDispose(VKHelper.CreateSwapchain(this));
-            CacheSwapchainImages();
+            GraphicsCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(GraphicsQueueFamilyIndex)));
+            ComputeCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(ComputeQueueFamilyIndex)));
 
             Graphics = ToDispose(new Graphics(this));
             Graphics.ViewportPosition = Vector2I.Zero;
             Graphics.ViewportSize = Window.Size;
-            Graphics.Build();
+
+            Build();
+        }
+
+        internal void Build()
+        {
+            ComputeCommandPool?.Reset();
+            ComputeCommandPool?.Reset();
+
+            ImageAvailableSemaphore?.Dispose();
+            RenderingFinishedSemaphore?.Dispose();
+            Swapchain?.Dispose();
+
+            ImageAvailableSemaphore = ToDispose(Device.CreateSemaphore());
+            RenderingFinishedSemaphore = ToDispose(Device.CreateSemaphore());
+
+            Swapchain = ToDispose(VKHelper.CreateSwapchain(this));
+            CacheSwapchainImages();
+
+            DepthStencil = Texture2D.DepthStencil(this, Window.Width, Window.Height);
+            RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil, Graphics.ClearDepthOnBeginPass);
+            foreach (var img in SwapchainImages)
+                img.CreateFrameBuffer(RenderPass, DepthStencil, Window.Width, Window.Height);
         }
 
         public override void Dispose()
@@ -135,7 +150,7 @@ namespace Vulpine
             var imgs = Swapchain.GetImages();
             SwapchainImages = new VKImage[imgs.Length];
             for (var i = 0; i < imgs.Length; i++)
-                SwapchainImages[i] = new VKImage { Image = imgs[i] };
+                SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format);
         }
     }
 }

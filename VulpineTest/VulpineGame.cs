@@ -39,8 +39,8 @@ namespace VulpineTest
         Angle CamAngle = new Angle(0f, 9f, 0f);
         float CamDist = 30f;
 
-        Dictionary<int, CommandBufferController> CommandBufferClear = new Dictionary<int, CommandBufferController>();
-        Dictionary<int, CommandBufferController> CommandBufferBatch = new Dictionary<int, CommandBufferController>();
+        Dictionary<VKImage, CommandBufferController> CommandBufferClear = new Dictionary<VKImage, CommandBufferController>();
+        Dictionary<VKImage, CommandBufferController> CommandBufferBatch = new Dictionary<VKImage, CommandBufferController>();
 
         public VulpineGame() : base("Vulpine Test", new Vector2I(800, 600))
         {
@@ -83,7 +83,14 @@ namespace VulpineTest
 
             Pipeline.Build();
         }
-        
+
+        protected override void OnResize()
+        {
+            base.OnResize();
+
+            Graphics.ViewportSize = Size;
+        }
+
         protected override void OnUpdate(int tick)
         {
             base.OnUpdate(tick);
@@ -98,38 +105,48 @@ namespace VulpineTest
             BViewProjection.Write(ref VP);
         }
 
-        protected override void OnNewSwapchainImage(int swapchainImageIndex)
+        protected override void OnCreateSwapchainImage(VKImage image)
         {
-            base.OnNewSwapchainImage(swapchainImageIndex);
+            base.OnCreateSwapchainImage(image);
 
             CommandBufferController cb;
-            if (CommandBufferClear.TryGetValue(swapchainImageIndex, out cb))
-            {
-                cb?.Dispose();
-            }
-            CommandBufferClear[swapchainImageIndex] = cb = new CommandBufferController(Graphics, Graphics.GetSwapchainImage(swapchainImageIndex));
+            CommandBufferClear[image] = cb = new CommandBufferController(Graphics, image);
             cb.Begin();
             cb.Clear(Color.White);
             cb.End();
 
-            if (CommandBufferBatch.TryGetValue(swapchainImageIndex, out cb))
-            {
-                cb?.Dispose();
-            }
-            CommandBufferBatch[swapchainImageIndex] = cb = new CommandBufferController(Graphics, Graphics.GetSwapchainImage(swapchainImageIndex));
+            CommandBufferBatch[image] = cb = new CommandBufferController(Graphics, image);
             cb.Begin();
-            cb.BeginPass(Pipeline, swapchainImageIndex);
+            cb.BeginPass(Pipeline, image);
             cb.Draw(Graphics.Square, Instances, BatchSize);
             cb.EndPass();
             cb.End();
         }
 
-        protected override void OnDrawToSwapchainImage(int swapchainImageIndex)
+        protected override void OnDeleteSwapchainImage(VKImage image)
         {
-            base.OnDrawToSwapchainImage(swapchainImageIndex);
+            base.OnCreateSwapchainImage(image);
 
-            CommandBufferClear[swapchainImageIndex].Submit();
-            CommandBufferBatch[swapchainImageIndex].Submit(false);
+            CommandBufferController cb;
+            if (CommandBufferClear.TryGetValue(image, out cb))
+            {
+                cb?.Dispose();
+                CommandBufferClear.Remove(image);
+            }
+
+            if (CommandBufferBatch.TryGetValue(image, out cb))
+            {
+                cb?.Dispose();
+                CommandBufferBatch.Remove(image);
+            }
+        }
+
+        protected override void OnDrawToSwapchainImage(VKImage image)
+        {
+            base.OnDrawToSwapchainImage(image);
+
+            CommandBufferClear[image].Submit();
+            CommandBufferBatch[image].Submit(false);
         }
     }
 }

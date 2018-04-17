@@ -12,7 +12,7 @@ namespace Vulpine
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4
     {
-        internal static Matrix4x4 ViewMult = Matrix4x4.CreateScale(new System.Numerics.Vector3(-1f, -1f, 1f));
+        public static Matrix4 Identity = new Matrix4 { InternalMatrix = Matrix4x4.Identity };
 
         internal Matrix4x4 InternalMatrix;
 

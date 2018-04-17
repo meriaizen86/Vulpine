@@ -149,21 +149,6 @@ namespace Vulpine
                 presentMode));
         }
 
-        public static ImageView[] CreateImageViews(Graphics g)
-        {
-            var imageViews = new ImageView[g.Context.SwapchainImages.Length];
-            for (int i = 0; i < g.Context.SwapchainImages.Length; i++)
-            {
-                imageViews[i] = g.Context.SwapchainImages[i].Image.CreateView(
-                    new ImageViewCreateInfo(
-                        g.Context.Swapchain.Format,
-                        new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1)
-                    )
-                );
-            }
-            return imageViews;
-        }
-
         public static RenderPass CreateRenderPass(Graphics g, Texture2D depthStencil, bool clearDepthOnBeginPass)
         {
             var subpasses = new[]
@@ -279,19 +264,6 @@ namespace Vulpine
         {
             var layoutCreateInfo = new PipelineLayoutCreateInfo(setLayouts);
             return g.Context.Device.CreatePipelineLayout(layoutCreateInfo);
-        }
-
-        public static Framebuffer[] CreateFramebuffers(Graphics g, RenderPass rp, ImageView[] iv, Texture2D depthStencil)
-        {
-            var framebuffers = new Framebuffer[g.Context.SwapchainImages.Length];
-            for (int i = 0; i < g.Context.SwapchainImages.Length; i++)
-            {
-                framebuffers[i] = rp.CreateFramebuffer(new FramebufferCreateInfo(
-                    new[] { iv[i], depthStencil.View },
-                    g.ViewportSize.X,
-                    g.ViewportSize.Y));
-            }
-            return framebuffers;
         }
 
         public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
@@ -465,7 +437,7 @@ namespace Vulpine
                 new[] { colorBlendAttachmentState });
 
             var pipelineCreateInfo = new GraphicsPipelineCreateInfo(
-                pl, g.RenderPass, 0,
+                pl, g.Context.RenderPass, 0,
                 shaderStageCreateInfos,
                 inputAssemblyStateCreateInfo,
                 vertexInputStateCreateInfo,

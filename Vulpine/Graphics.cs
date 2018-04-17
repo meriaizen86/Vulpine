@@ -13,10 +13,6 @@ namespace Vulpine
         static ImageSubresourceRange DefaultSubresourceRange = new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1);
 
         internal Context Context;
-        internal RenderPass RenderPass;
-        internal Texture2D DepthStencil;
-        internal ImageView[] ImageViews;
-        internal Framebuffer[] Framebuffers;
         public Vector2I ViewportPosition;
         public Vector2I ViewportSize;
         public int Samples = 1;
@@ -51,25 +47,10 @@ namespace Vulpine
                 });
         }
 
-        public void Build()
-        {
-            DepthStencil?.Dispose();
-            RenderPass?.Dispose();
-            ImageViews?.DisposeRange();
-            Framebuffers?.DisposeRange();
-
-            DepthStencil = Texture2D.DepthStencil(Context, ViewportSize.X, ViewportSize.Y);
-            RenderPass = VKHelper.CreateRenderPass(this, DepthStencil, ClearDepthOnBeginPass);
-            ImageViews = VKHelper.CreateImageViews(this);
-            Framebuffers = VKHelper.CreateFramebuffers(this, RenderPass, ImageViews, DepthStencil);
-        }
-
         public void Dispose()
         {
-            DepthStencil?.Dispose();
-            RenderPass?.Dispose();
-            ImageViews?.DisposeRange();
-            Framebuffers?.DisposeRange();
+            Square?.Dispose();
+            Triangle?.Dispose();
         }
 
         public VKImage GetSwapchainImage(int index)
