@@ -14,9 +14,12 @@ namespace Vulpine
         internal Image Image;
         internal ImageView View;
         internal Framebuffer Framebuffer;
+        public Vector2I Size { private set; get; }
+        internal CommandBufferController GeneralCommandBuffer { get; private set; }
 
-        internal VKImage(Context ctx, Image image, Format format)
+        internal VKImage(Context ctx, Image image, Format format, Vector2I size)
         {
+            Size = size;
             Context = ctx;
             Image = image;
             View = Image.CreateView(new ImageViewCreateInfo(
@@ -25,15 +28,18 @@ namespace Vulpine
             ));
         }
 
-        internal void CreateFrameBuffer(RenderPass rp, Texture2D depthStencil, int width, int height)
+        internal void CreateFrameBuffer(RenderPass rp, Texture2D depthStencil)
         {
             Framebuffer = rp.CreateFramebuffer(new FramebufferCreateInfo(
                     new[] { View, depthStencil.View },
-                    width, height));
+                    Size.X, Size.Y));
+
+            GeneralCommandBuffer = new CommandBufferController(Context.Graphics, this);
         }
 
         public void Dispose()
         {
+            GeneralCommandBuffer?.Dispose();
             View?.Dispose();
             Image?.Dispose();
         }

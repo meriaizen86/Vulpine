@@ -135,7 +135,7 @@ namespace Vulpine
             DepthStencil = Texture2D.DepthStencil(this, Window.Width, Window.Height);
             RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil, Graphics.ClearDepthOnBeginPass);
             foreach (var img in SwapchainImages)
-                img.CreateFrameBuffer(RenderPass, DepthStencil, Window.Width, Window.Height);
+                img.CreateFrameBuffer(RenderPass, DepthStencil);
         }
 
         public override void Dispose()
@@ -150,7 +150,7 @@ namespace Vulpine
             var imgs = Swapchain.GetImages();
             SwapchainImages = new VKImage[imgs.Length];
             for (var i = 0; i < imgs.Length; i++)
-                SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format);
+                SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format, Window.Size);
         }
     }
 }

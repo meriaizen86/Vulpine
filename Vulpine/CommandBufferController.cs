@@ -81,7 +81,7 @@ namespace Vulpine
         {
             var renderPassBeginInfo = new RenderPassBeginInfo(
                 image.Framebuffer,
-                new Rect2D(Graphics.ViewportPosition.X, Graphics.ViewportPosition.Y, Graphics.ViewportSize.X, Graphics.ViewportSize.Y),
+                new Rect2D(0, 0, image.Size.X, image.Size.Y),
                 new ClearColorValue(),
                 new ClearDepthStencilValue(1f, 0)
             );

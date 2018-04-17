@@ -13,6 +13,7 @@ namespace Vulpine
     public struct Matrix4
     {
         public static Matrix4 Identity = new Matrix4 { InternalMatrix = Matrix4x4.Identity };
+        public static Matrix4 Zero = new Matrix4 { InternalMatrix = new Matrix4x4(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f) };
 
         internal Matrix4x4 InternalMatrix;
 
