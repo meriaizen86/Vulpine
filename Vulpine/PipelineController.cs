@@ -14,6 +14,7 @@ namespace Vulpine
         internal PipelineLayout PipelineLayout;
         internal DescriptorPool DescriptorPool;
         internal DescriptorSet DescriptorSet;
+        internal RenderPass RenderPass;
         internal Pipeline Pipeline;
         internal Graphics Graphics;
         internal Sampler[] UsingSamplers;
@@ -24,6 +25,7 @@ namespace Vulpine
         public BlendMode BlendMode = BlendMode.Alpha;
         public bool Instancing = false;
         public Type InstanceInfoType = null;
+        public bool ClearDepthOnBeginPass = true;
 
         public PipelineController(Graphics g)
         {
@@ -43,7 +45,8 @@ namespace Vulpine
             PipelineLayout = VKHelper.CreatePipelineLayout(Graphics, DescriptorSetLayout);
             DescriptorPool = VKHelper.CreateDescriptorPool(Graphics, DescriptorItems);
             DescriptorSet = VKHelper.CreateDescriptorSet(DescriptorPool, DescriptorSetLayout, DescriptorItems, out UsingSamplers);
-            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType, BlendMode);
+            RenderPass = VKHelper.CreateRenderPass(Graphics, ClearDepthOnBeginPass);
+            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType, BlendMode);
         }
 
         public void Dispose()
@@ -52,6 +55,7 @@ namespace Vulpine
             PipelineLayout?.Dispose();
             UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
+            RenderPass?.Dispose();
             Pipeline?.Dispose();
         }
     }

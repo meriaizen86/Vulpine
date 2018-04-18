@@ -78,9 +78,7 @@ namespace Vulpine
             Context = ToDispose(new Context(this));
 
             OnInit();
-            OnBuildPipelines();
             
-            OnLoad();
             foreach (var img in Context.SwapchainImages)
                 OnCreateSwapchainImage(img);
         }
@@ -134,7 +132,6 @@ namespace Vulpine
                 OnDeleteSwapchainImage(img);
 
             Context.Build();
-            OnBuildPipelines();
 
             foreach (var img in Context.SwapchainImages)
                 OnCreateSwapchainImage(img);
@@ -148,16 +145,6 @@ namespace Vulpine
         protected virtual void OnFinish()
         {
 
-        }
-
-        protected virtual void OnBuildPipelines()
-        {
-            
-        }
-
-        protected virtual void OnLoad()
-        {
-            
         }
 
         protected virtual void OnCreateSwapchainImage(VKImage image)

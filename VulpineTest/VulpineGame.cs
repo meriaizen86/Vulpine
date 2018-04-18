@@ -26,7 +26,7 @@ namespace VulpineTest
             public Vector3 Position;
         }
 
-        const int BatchSize = 500;
+        const int BatchSize = 6500;
 
         PipelineController Pipeline;
         VKBuffer Instances;
@@ -40,11 +40,12 @@ namespace VulpineTest
         Angle CamAngle = new Angle(0f, 9f, 0f);
         float CamDist = 10f;
 
-        Dictionary<VKImage, CommandBufferController> CommandBufferClear = new Dictionary<VKImage, CommandBufferController>();
-        Dictionary<VKImage, CommandBufferController> CommandBufferBatch = new Dictionary<VKImage, CommandBufferController>();
+        Dictionary<VKImage, CommandBufferController> CommandBuffer = new Dictionary<VKImage, CommandBufferController>();
+        CommandBufferController RenderTargetCB;
 
         SpriteRenderer SpriteRenderer;
         Sprite TestSprite;
+        Texture2D RenderTarget;
 
         public VulpineGame() : base("Vulpine Test", new Vector2I(800, 600))
         {
@@ -79,18 +80,20 @@ namespace VulpineTest
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, BViewProjection),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, Tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
-
-            
-            SpriteRenderer = new SpriteRenderer(Graphics, Tex, 1024);
-            TestSprite = new Sprite(Tex, new Vector2(0f, 0f), new Vector2(64f, 64f));
-        }
-
-        protected override void OnBuildPipelines()
-        {
-            base.OnBuildPipelines();
-
             Pipeline.Build();
+
+
+            RenderTarget = Texture2D.RenderTarget(Graphics, Size.X, Size.Y);
+            SpriteRenderer = new SpriteRenderer(Graphics, RenderTarget, 1024);
             SpriteRenderer.BuildPipeline();
+            TestSprite = new Sprite(RenderTarget, new Vector2(0f, 0f), new Vector2(Size.X, Size.Y));
+            RenderTargetCB = new CommandBufferController(Graphics, RenderTarget);
+            RenderTargetCB.Begin();
+            RenderTargetCB.Clear(Color.Transparent);
+            RenderTargetCB.BeginPass(Pipeline);
+            RenderTargetCB.Draw(Graphics.Square, Instances, BatchSize);
+            RenderTargetCB.EndPass();
+            RenderTargetCB.End();
         }
 
         protected override void OnResize()
@@ -98,6 +101,9 @@ namespace VulpineTest
             base.OnResize();
 
             Graphics.ViewportSize = Size;
+
+            Pipeline.Build();
+            SpriteRenderer.BuildPipeline();
         }
 
         protected override void OnUpdate(int tick)
@@ -115,10 +121,11 @@ namespace VulpineTest
 
             SpriteRenderer.Camera = new SpriteRenderer.ViewProjection { Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f), View = Matrix4.Identity };
             SpriteRenderer.SetSpriteInfo(new[] {
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(Vector3.Zero)),
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3(64f, 80f, 0f))),
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3(80f, 100f, 0f)))
+                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 100f, 0f))),
+                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 200f, 0f))),
+                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 300f, 0f)))
             }, 3);
+            
         }
 
         protected override void OnCreateSwapchainImage(VKImage image)
@@ -126,13 +133,9 @@ namespace VulpineTest
             base.OnCreateSwapchainImage(image);
 
             CommandBufferController cb;
-            CommandBufferClear[image] = cb = new CommandBufferController(Graphics, image);
+            CommandBuffer[image] = cb = new CommandBufferController(Graphics, image);
             cb.Begin();
-            cb.Clear(Color.White);
-            cb.End();
-
-            CommandBufferBatch[image] = cb = new CommandBufferController(Graphics, image);
-            cb.Begin();
+            cb.Clear(Color.CornflowerBlue);
             cb.BeginPass(Pipeline);
             cb.Draw(Graphics.Square, Instances, BatchSize);
             cb.EndPass();
@@ -146,16 +149,10 @@ namespace VulpineTest
             base.OnCreateSwapchainImage(image);
 
             CommandBufferController cb;
-            if (CommandBufferClear.TryGetValue(image, out cb))
+            if (CommandBuffer.TryGetValue(image, out cb))
             {
                 cb?.Dispose();
-                CommandBufferClear.Remove(image);
-            }
-
-            if (CommandBufferBatch.TryGetValue(image, out cb))
-            {
-                cb?.Dispose();
-                CommandBufferBatch.Remove(image);
+                CommandBuffer.Remove(image);
             }
 
             SpriteRenderer.RemoveImage(image);
@@ -165,9 +162,9 @@ namespace VulpineTest
         {
             base.OnDrawToSwapchainImage(image);
 
-            CommandBufferClear[image].Submit();
-            CommandBufferBatch[image].Submit(false);
+            CommandBuffer[image].Submit(false);
 
+            RenderTargetCB.Submit(true);
             SpriteRenderer.Draw(image);
         }
     }

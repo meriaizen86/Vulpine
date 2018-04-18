@@ -21,23 +21,26 @@ namespace Vulpine
 
     public class Texture2D : IDisposable
     {
-        private Texture2D(Context ctx, Image image, DeviceMemory memory, ImageView view, Format format, Vector2I size /*, Sampler sampler*/)
+        private Texture2D(Context ctx, Image image, DeviceMemory memory, ImageView view, Format format, Vector2I size, bool renderTarget)
         {
             Context = ctx;
-            Image = image;
+            Image = new VKImage(ctx, image, format, size, view);
             Memory = memory;
             View = view;
             Format = format;
             Size = size;
-            //Sampler = sampler;
+            IsRenderTarget = renderTarget;
+            if (IsRenderTarget)
+                Image.CreateDepthStencil();
         }
 
         internal Context Context { get; }
         internal Format Format { get; }
-        internal Image Image { get; }
+        internal VKImage Image { get; }
         internal ImageView View { get; }
         internal DeviceMemory Memory { get; }
         public Vector2I Size { get; }
+        public bool IsRenderTarget { get; }
         //internal Sampler Sampler { get; }
 
         public void Dispose()
@@ -47,35 +50,16 @@ namespace Vulpine
             Image.Dispose();
         }
 
-        public static implicit operator Image(Texture2D value) => value.Image;
+        public static implicit operator VKImage(Texture2D value) => value.Image;
+
+        
 
         internal static Texture2D DepthStencil(Context ctx, int width, int height)
         {
-            Format[] validFormats =
-            {
-                Format.D32SFloatS8UInt,
-                Format.D32SFloat,
-                Format.D24UNormS8UInt,
-                Format.D16UNormS8UInt,
-                Format.D16UNorm
-            };
-
-            Format? potentialFormat = validFormats.FirstOrDefault(
-                validFormat =>
-                {
-                    FormatProperties formatProps = ctx.PhysicalDevice.GetFormatProperties(validFormat);
-                    return (formatProps.OptimalTilingFeatures & FormatFeatures.DepthStencilAttachment) > 0;
-                });
-
-            if (!potentialFormat.HasValue)
-                throw new InvalidOperationException("Required depth stencil format not supported.");
-
-            Format format = potentialFormat.Value;
-
             Image image = ctx.Device.CreateImage(new ImageCreateInfo
             {
                 ImageType = ImageType.Image2D,
-                Format = format,
+                Format = ctx.DepthStencilFormat,
                 Extent = new Extent3D(width, height, 1),
                 MipLevels = 1,
                 ArrayLayers = 1,
@@ -88,12 +72,12 @@ namespace Vulpine
                 memReq.MemoryTypeBits, MemoryProperties.DeviceLocal);
             DeviceMemory memory = ctx.Device.AllocateMemory(new MemoryAllocateInfo(memReq.Size, heapIndex));
             image.BindMemory(memory);
-            ImageView view = image.CreateView(new ImageViewCreateInfo(format,
+            ImageView view = image.CreateView(new ImageViewCreateInfo(ctx.DepthStencilFormat,
                 new ImageSubresourceRange(ImageAspects.Depth | ImageAspects.Stencil, 0, 1, 0, 1)));
 
             //var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Nearest);
 
-            return new Texture2D(ctx, image, memory, view, format, new Vector2I(width, height)/*, sampler*/);
+            return new Texture2D(ctx, image, memory, view, ctx.DepthStencilFormat, new Vector2I(width, height), false);
         }
 
         internal static Texture2D FromFile(Context ctx, string path)
@@ -239,7 +223,41 @@ namespace Vulpine
 
             var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Linear);
 
-            return new Texture2D(ctx, image, memory, view, tex2D.Format, new Vector2I(tex2D.Mipmaps[0].Extent.Width, tex2D.Mipmaps[0].Extent.Height)/*, sampler*/);
+            return new Texture2D(ctx, image, memory, view, tex2D.Format, new Vector2I(tex2D.Mipmaps[0].Extent.Width, tex2D.Mipmaps[0].Extent.Height), false);
+        }
+
+        public static Texture2D RenderTarget(Graphics g, int width, int height)
+        {
+            const Format format = Format.B8G8R8A8UNorm;
+
+            // Create optimal tiled target image.
+            Image image = g.Context.Device.CreateImage(new ImageCreateInfo
+            {
+                ImageType = ImageType.Image2D,
+                Format = format,
+                MipLevels = 1,
+                ArrayLayers = 1,
+                Samples = SampleCounts.Count1,
+                Tiling = ImageTiling.Optimal,
+                SharingMode = SharingMode.Exclusive,
+                InitialLayout = ImageLayout.Undefined,
+                Extent = new Extent3D(width, height, 1),
+                Usage = ImageUsages.Sampled | ImageUsages.TransferDst | ImageUsages.TransferSrc | ImageUsages.ColorAttachment
+            });
+            MemoryRequirements imageMemReq = image.GetMemoryRequirements();
+            int imageHeapIndex = g.Context.MemoryProperties.MemoryTypes.IndexOf(
+                imageMemReq.MemoryTypeBits, MemoryProperties.DeviceLocal);
+            DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(imageMemReq.Size, imageHeapIndex));
+            image.BindMemory(memory);
+
+            var subresourceRange = new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1);
+
+            // Create image view.
+            ImageView view = image.CreateView(new ImageViewCreateInfo(format, subresourceRange));
+
+            var sampler = VKHelper.CreateSampler(g.Context, Filter.Linear, Filter.Linear, SamplerMipmapMode.Linear);
+
+            return new Texture2D(g.Context, image, memory, view, format, new Vector2I(width, height), true);
         }
     }
 }

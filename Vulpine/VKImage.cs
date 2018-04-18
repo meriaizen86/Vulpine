@@ -13,7 +13,8 @@ namespace Vulpine
         Context Context;
         internal Image Image;
         internal ImageView View;
-        internal Framebuffer Framebuffer;
+        Dictionary<PipelineController, Framebuffer> Framebuffer = new Dictionary<PipelineController, VulkanCore.Framebuffer>();
+        internal Texture2D DepthStencil;
         public Vector2I Size { private set; get; }
         //internal CommandBufferController GeneralCommandBuffer { get; private set; }
 
@@ -28,13 +29,40 @@ namespace Vulpine
             ));
         }
 
-        internal void CreateFrameBuffer(RenderPass rp, Texture2D depthStencil)
+        internal VKImage(Context ctx, Image image, Format format, Vector2I size, ImageView view)
         {
-            Framebuffer = rp.CreateFramebuffer(new FramebufferCreateInfo(
-                    new[] { View, depthStencil.View },
-                    Size.X, Size.Y));
+            Size = size;
+            Context = ctx;
+            Image = image;
+            View = view;
+        }
 
-            //GeneralCommandBuffer = new CommandBufferController(Context.Graphics, this);
+        internal void CreateDepthStencil()
+        {
+            DepthStencil = Texture2D.DepthStencil(Context, Size.X, Size.Y);
+        }
+
+        internal Framebuffer GetFrameBuffer(PipelineController pipeline)
+        {
+            Framebuffer fb;
+            if (!Framebuffer.TryGetValue(pipeline, out fb))
+            {
+                fb = pipeline.RenderPass.CreateFramebuffer(new FramebufferCreateInfo(
+                    new[] { View, DepthStencil.View },
+                    Size.X, Size.Y));
+                Framebuffer.Add(pipeline, fb);
+            }
+            return fb;
+        }
+
+        internal void RemoveFrameBuffer(PipelineController pipeline)
+        {
+            Framebuffer fb;
+            if (Framebuffer.TryGetValue(pipeline, out fb))
+            {
+                fb?.Dispose();
+                Framebuffer.Remove(pipeline);
+            }
         }
 
         public void Dispose()
@@ -42,6 +70,8 @@ namespace Vulpine
             //GeneralCommandBuffer?.Dispose();
             View?.Dispose();
             Image?.Dispose();
+            DepthStencil?.Dispose();
+            Framebuffer?.Keys?.DisposeRange();
         }
     }
 }

@@ -34,8 +34,6 @@ namespace Vulpine
         internal VKImage[] SwapchainImages;
         internal List<PipelineController> Pipelines = new List<PipelineController>();
         internal Graphics Graphics;
-        internal RenderPass RenderPass;
-        internal Texture2D DepthStencil;
         int GraphicsQueueFamilyIndex = -1;
         int ComputeQueueFamilyIndex = -1;
         int PresentQueueFamilyIndex = -1;
@@ -77,6 +75,8 @@ namespace Vulpine
 
             if (PhysicalDevice == null)
                 throw new InvalidOperationException("No suitable physical device found.");
+
+            GenerateDepthStencilFormat();
 
             // Store memory properties of the physical device.
             MemoryProperties = PhysicalDevice.GetMemoryProperties();
@@ -131,11 +131,6 @@ namespace Vulpine
 
             Swapchain = ToDispose(VKHelper.CreateSwapchain(this));
             CacheSwapchainImages();
-
-            DepthStencil = Texture2D.DepthStencil(this, Window.Width, Window.Height);
-            RenderPass = VKHelper.CreateRenderPass(Graphics, DepthStencil, Graphics.ClearDepthOnBeginPass);
-            foreach (var img in SwapchainImages)
-                img.CreateFrameBuffer(RenderPass, DepthStencil);
         }
 
         public override void Dispose()
@@ -150,7 +145,35 @@ namespace Vulpine
             var imgs = Swapchain.GetImages();
             SwapchainImages = new VKImage[imgs.Length];
             for (var i = 0; i < imgs.Length; i++)
+            {
                 SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format, Window.Size);
+                SwapchainImages[i].CreateDepthStencil();
+            }
+        }
+
+        internal Format DepthStencilFormat;
+        internal void GenerateDepthStencilFormat()
+        {
+            Format[] validFormats =
+            {
+                Format.D32SFloatS8UInt,
+                Format.D32SFloat,
+                Format.D24UNormS8UInt,
+                Format.D16UNormS8UInt,
+                Format.D16UNorm
+            };
+
+            Format? potentialFormat = validFormats.FirstOrDefault(
+                validFormat =>
+                {
+                    FormatProperties formatProps = PhysicalDevice.GetFormatProperties(validFormat);
+                    return (formatProps.OptimalTilingFeatures & FormatFeatures.DepthStencilAttachment) > 0;
+                });
+
+            if (!potentialFormat.HasValue)
+                throw new InvalidOperationException("Required depth stencil format not supported.");
+
+            DepthStencilFormat = potentialFormat.Value;
         }
     }
 }

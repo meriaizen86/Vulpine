@@ -16,7 +16,6 @@ namespace Vulpine
         public Vector2I ViewportPosition;
         public Vector2I ViewportSize;
         public int Samples = 1;
-        public bool ClearDepthOnBeginPass = true;
 
 
         public Primitive Square { get; private set; }

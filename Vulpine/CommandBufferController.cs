@@ -85,7 +85,7 @@ namespace Vulpine
         public void BeginPass(PipelineController pipeline)
         {
             var renderPassBeginInfo = new RenderPassBeginInfo(
-                Image.Framebuffer,
+                Image.GetFrameBuffer(pipeline),
                 new Rect2D(0, 0, Image.Size.X, Image.Size.Y),
                 new ClearColorValue(),
                 new ClearDepthStencilValue(1f, 0)
@@ -144,7 +144,7 @@ namespace Vulpine
             CommandBuffer.CmdClearColorImage(
                 Image.Image,
                 ImageLayout.TransferDstOptimal,
-                new ClearColorValue(new ColorF4(0.39f, 0.58f, 0.93f, 1.0f)),
+                new ClearColorValue(new ColorF4((float)color.R / 255f, (float)color.G / 255f, (float)color.B / 255f, (float)color.A / 255f)),
                 DefaultSubresourceRangeColor);
             CommandBuffer.CmdPipelineBarrier(
                 PipelineStages.Transfer, PipelineStages.Transfer,

@@ -149,7 +149,7 @@ namespace Vulpine
                 presentMode));
         }
 
-        public static RenderPass CreateRenderPass(Graphics g, Texture2D depthStencil, bool clearDepthOnBeginPass)
+        public static RenderPass CreateRenderPass(Graphics g, bool clearDepthOnBeginPass)
         {
             var subpasses = new[]
             {
@@ -179,7 +179,7 @@ namespace Vulpine
                 },
                 new AttachmentDescription
                 {
-                    Format = depthStencil.Format,
+                    Format = g.Context.DepthStencilFormat,
                     Samples = samples,
                     LoadOp = clearDepthOnBeginPass ? AttachmentLoadOp.Clear : AttachmentLoadOp.Load,
                     StoreOp = AttachmentStoreOp.DontCare,
@@ -266,7 +266,7 @@ namespace Vulpine
             return g.Context.Device.CreatePipelineLayout(layoutCreateInfo);
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
         {
             if (instancing && instanceInfoType == null)
                 throw new NullReferenceException("Instance info type cannot be null");
@@ -446,7 +446,7 @@ namespace Vulpine
                 new[] { colorBlendAttachmentState });
 
             var pipelineCreateInfo = new GraphicsPipelineCreateInfo(
-                pl, g.Context.RenderPass, 0,
+                pl, rp, 0,
                 shaderStageCreateInfos,
                 inputAssemblyStateCreateInfo,
                 vertexInputStateCreateInfo,
