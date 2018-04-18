@@ -107,7 +107,7 @@ namespace Vulpine
 
             Content = new Content(this);
 
-            GraphicsCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(GraphicsQueueFamilyIndex)));
+            GraphicsCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(GraphicsQueueFamilyIndex, CommandPoolCreateFlags.ResetCommandBuffer)));
             ComputeCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(ComputeQueueFamilyIndex)));
 
             Graphics = ToDispose(new Graphics(this));

@@ -10,7 +10,7 @@ namespace Vulpine
 {
     public class VKBuffer : IDisposable
     {
-        private VKBuffer(Context ctx, VulkanCore.Buffer buffer, DeviceMemory memory, int count, long size, bool writeUsingStagingBuffer = false, VulkanCore.Buffer stagingBuffer = null, DeviceMemory stagingMemory = null)
+        private VKBuffer(Context ctx, VulkanCore.Buffer buffer, DeviceMemory memory, Fence fence, int count, long size, bool writeUsingStagingBuffer = false, VulkanCore.Buffer stagingBuffer = null, DeviceMemory stagingMemory = null, CommandBuffer stagingCommandBuffer = null)
         {
             Context = ctx;
             Buffer = buffer;
@@ -20,6 +20,8 @@ namespace Vulpine
             WriteUsingStagingBuffer = writeUsingStagingBuffer;
             StagingBuffer = stagingBuffer;
             StagingMemory = stagingMemory;
+            StagingCommandBuffer = stagingCommandBuffer;
+            Fence = fence;
         }
 
         Context Context;
@@ -30,15 +32,19 @@ namespace Vulpine
         internal int Count { get; }
         internal long Size { get; }
         bool WriteUsingStagingBuffer;
+        internal Fence Fence;
+        internal CommandBuffer StagingCommandBuffer;
 
         public void Dispose()
         {
+            Fence?.Dispose();
             Memory.Dispose();
             Buffer.Dispose();
             if (WriteUsingStagingBuffer)
             {
                 StagingMemory?.Dispose();
                 StagingBuffer?.Dispose();
+                StagingCommandBuffer?.Dispose();
             }
         }
 
@@ -58,7 +64,7 @@ namespace Vulpine
             DeviceMemory memory = ctx.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(ctx, buffer, memory, count, size);
+            return new VKBuffer(ctx, buffer, memory, null, count, size);
         }
 
         public static VKBuffer UniformBuffer<T>(Graphics g, int count) where T : struct
@@ -75,7 +81,7 @@ namespace Vulpine
             DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(memoryRequirements.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(g.Context, buffer, memory, count, size);
+            return new VKBuffer(g.Context, buffer, memory, null, count, size);
         }
 
         internal static VKBuffer Index(Context ctx, int[] indices)
@@ -120,7 +126,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(ctx, buffer, memory, indices.Length, size);
+            return new VKBuffer(ctx, buffer, memory, null, indices.Length, size);
         }
 
         internal static VKBuffer Vertex<T>(Context ctx, T[] vertices) where T : struct
@@ -165,7 +171,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(ctx, buffer, memory, vertices.Length, size);
+            return new VKBuffer(ctx, buffer, memory, null, vertices.Length, size);
         }
 
         public static VKBuffer InstanceInfo<T>(Graphics g, int count) where T : struct
@@ -190,7 +196,7 @@ namespace Vulpine
             DeviceMemory memory = g.Context.Device.AllocateMemory(new MemoryAllocateInfo(req.Size, memoryTypeIndex));
             buffer.BindMemory(memory);
 
-            return new VKBuffer(g.Context, buffer, memory, count, size, true, stagingBuffer, stagingMemory);
+            return new VKBuffer(g.Context, buffer, memory, g.Context.Device.CreateFence(), count, size, true, stagingBuffer, stagingMemory, g.Context.GraphicsCommandPool.AllocateBuffers(new CommandBufferAllocateInfo(CommandBufferLevel.Primary, 1))[0]);
         }
 
         internal static VKBuffer Storage<T>(Context ctx, T[] data) where T : struct
@@ -235,7 +241,7 @@ namespace Vulpine
             stagingBuffer.Dispose();
             stagingMemory.Dispose();
 
-            return new VKBuffer(ctx, buffer, memory, data.Length, size);
+            return new VKBuffer(ctx, buffer, memory, null, data.Length, size);
         }
 
         public void Write<T>(ref T value) where T : struct
@@ -248,19 +254,15 @@ namespace Vulpine
                 StagingMemory.Unmap();
 
                 // Copy the data from staging buffers to device local buffers.
-                CommandBuffer cmdBuffer = Context.GraphicsCommandPool.AllocateBuffers(new CommandBufferAllocateInfo(CommandBufferLevel.Primary, 1))[0];
-                cmdBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
-                cmdBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
-                cmdBuffer.End();
+                StagingCommandBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
+                StagingCommandBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
+                StagingCommandBuffer.End();
 
                 // Submit.
-                Fence fence = Context.Device.CreateFence();
-                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { cmdBuffer }), fence);
-                fence.Wait();
-
-                // Cleanup.
-                fence.Dispose();
-                cmdBuffer.Dispose();
+                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { StagingCommandBuffer }), Fence);
+                Fence.Wait();
+                Fence.Reset();
+                StagingCommandBuffer.Reset();
 
                 return;
             }
@@ -279,19 +281,15 @@ namespace Vulpine
                 StagingMemory.Unmap();
 
                 // Copy the data from staging buffers to device local buffers.
-                CommandBuffer cmdBuffer = Context.GraphicsCommandPool.AllocateBuffers(new CommandBufferAllocateInfo(CommandBufferLevel.Primary, 1))[0];
-                cmdBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
-                cmdBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
-                cmdBuffer.End();
+                StagingCommandBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.OneTimeSubmit));
+                StagingCommandBuffer.CmdCopyBuffer(StagingBuffer, Buffer, new BufferCopy(Size));
+                StagingCommandBuffer.End();
 
                 // Submit.
-                Fence fence = Context.Device.CreateFence();
-                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { cmdBuffer }), fence);
-                fence.Wait();
-
-                // Cleanup.
-                fence.Dispose();
-                cmdBuffer.Dispose();
+                Context.GraphicsQueue.Submit(new SubmitInfo(commandBuffers: new[] { StagingCommandBuffer }), Fence);
+                Fence.Wait();
+                Fence.Reset();
+                StagingCommandBuffer.Reset();
 
                 return;
             }

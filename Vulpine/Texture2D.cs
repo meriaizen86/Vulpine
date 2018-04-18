@@ -21,13 +21,14 @@ namespace Vulpine
 
     public class Texture2D : IDisposable
     {
-        private Texture2D(Context ctx, Image image, DeviceMemory memory, ImageView view, Format format/*, Sampler sampler*/)
+        private Texture2D(Context ctx, Image image, DeviceMemory memory, ImageView view, Format format, Vector2I size /*, Sampler sampler*/)
         {
             Context = ctx;
             Image = image;
             Memory = memory;
             View = view;
             Format = format;
+            Size = size;
             //Sampler = sampler;
         }
 
@@ -36,6 +37,7 @@ namespace Vulpine
         internal Image Image { get; }
         internal ImageView View { get; }
         internal DeviceMemory Memory { get; }
+        public Vector2I Size { get; }
         //internal Sampler Sampler { get; }
 
         public void Dispose()
@@ -91,7 +93,7 @@ namespace Vulpine
 
             //var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Nearest);
 
-            return new Texture2D(ctx, image, memory, view, format/*, sampler*/);
+            return new Texture2D(ctx, image, memory, view, format, new Vector2I(width, height)/*, sampler*/);
         }
 
         internal static Texture2D FromFile(Context ctx, string path)
@@ -237,7 +239,7 @@ namespace Vulpine
 
             var sampler = VKHelper.CreateSampler(ctx, Filter.Linear, Filter.Linear, SamplerMipmapMode.Linear);
 
-            return new Texture2D(ctx, image, memory, view, tex2D.Format/*, sampler*/);
+            return new Texture2D(ctx, image, memory, view, tex2D.Format, new Vector2I(tex2D.Mipmaps[0].Extent.Width, tex2D.Mipmaps[0].Extent.Height)/*, sampler*/);
         }
     }
 }

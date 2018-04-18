@@ -91,6 +91,7 @@ namespace Vulpine
             var updateSW = new Stopwatch();
             var drawSW = new Stopwatch();
             var updateCount = 0;
+            var first = false;
             updateSW.Start();
             drawSW.Start();
 
@@ -102,8 +103,9 @@ namespace Vulpine
                 Application.DoEvents();
 
                 var elapsed = updateSW.Elapsed;
-                if (elapsed.TotalSeconds > SecondsPerUpdate)
+                if (elapsed.TotalSeconds > SecondsPerUpdate || first)
                 {
+                    first = false;
                     updateSW.Restart();
                     OnUpdate(updateCount++);
                     

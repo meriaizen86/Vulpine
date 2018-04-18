@@ -28,10 +28,10 @@ namespace Vulpine
 
             Square = new Primitive(Context,
                 new Vertex[] {
-                    new Vertex( -1f, -1f, 0f,   0f, 0f, 1f,     0f, 0f  ),
-                    new Vertex( 1f, -1f, 0f,    0f, 0f, 1f,     1f, 0f  ),
-                    new Vertex( 1f, 1f, 0f,     0f, 0f, 1f,     1f, 1f  ),
-                    new Vertex( -1f, 1f, 0f,    0f, 0f, 1f,     0f, 1f  ),
+                    new Vertex( -0.5f, -0.5f, 0f,   0f, 0f, 1f,     0f, 0f  ),
+                    new Vertex( 0.5f, -0.5f, 0f,    0f, 0f, 1f,     1f, 0f  ),
+                    new Vertex( 0.5f, 0.5f, 0f,     0f, 0f, 1f,     1f, 1f  ),
+                    new Vertex( -0.5f, 0.5f, 0f,    0f, 0f, 1f,     0f, 1f  ),
                 },
                 new int[] {
                     0, 1, 2, 2, 3, 0

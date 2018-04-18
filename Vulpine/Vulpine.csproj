@@ -61,6 +61,8 @@
     <Compile Include="MathHelper.cs" />
     <Compile Include="Matrix4.cs" />
     <Compile Include="PipelineController.cs" />
+    <Compile Include="Sprite\Sprite.cs" />
+    <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Text\TextRenderer.cs" />
     <Compile Include="VKBuffer.cs" />
     <Compile Include="Content.cs" />

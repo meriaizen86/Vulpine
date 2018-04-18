@@ -289,40 +289,45 @@ namespace Vulpine
                 }
                 
             }
-
+            
             var fields = typeof(Vertex).GetFields();
             var offset = 0;
+            var loci = 0;
             List<VertexInputAttributeDescription> vertexAttributes = new List<VertexInputAttributeDescription>(fields.Length);
             for (var i = 0; i < fields.Length; i++)
             {
                 var ftype = fields[i].FieldType;
                 if (ftype == typeof(Vector3))
                 {
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32SFloat, offset));
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32SFloat, offset));
                     offset += 12;
+                    loci++;
                 }
                 else if (ftype == typeof(Vector2))
                 {
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32SFloat, offset));
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32SFloat, offset));
                     offset += 8;
+                    loci++;
                 }
                 else if (ftype == typeof(float))
                 {
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32SFloat, offset));
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32SFloat, offset));
                     offset += 4;
+                    loci++;
                 }
                 else if (ftype == typeof(Matrix4))
                 {
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
-                    i++;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32A32SFloat, offset));
+                    loci++;
                     offset += 16;
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
-                    i++;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32A32SFloat, offset));
+                    loci++;
                     offset += 16;
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
-                    i++;
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32A32SFloat, offset));
+                    loci++;
                     offset += 16;
-                    vertexAttributes.Add(new VertexInputAttributeDescription(i, 0, Format.R32G32B32A32SFloat, offset));
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32A32SFloat, offset));
+                    loci++;
                     offset += 16;
                 }
                 else throw new Exception("Field " + fields[i] + " of vertex struct is an illegal type");
@@ -338,31 +343,35 @@ namespace Vulpine
                     var ftype = fields[i].FieldType;
                     if (ftype == typeof(Vector3))
                     {
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32SFloat, offset));
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32SFloat, offset));
+                        loci++;
                         offset += 12;
                     }
                     else if (ftype == typeof(Vector2))
                     {
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32SFloat, offset));
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32SFloat, offset));
+                        loci++;
                         offset += 8;
                     }
                     else if (ftype == typeof(float))
                     {
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32SFloat, offset));
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32SFloat, offset));
+                        loci++;
                         offset += 4;
                     }
                     else if (ftype == typeof(Matrix4))
                     {
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
-                        i++;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32A32SFloat, offset));
+                        loci++;
                         offset += 16;
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
-                        i++;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32A32SFloat, offset));
+                        loci++;
                         offset += 16;
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
-                        i++;
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32A32SFloat, offset));
+                        loci++;
                         offset += 16;
-                        vertexAttributes.Add(new VertexInputAttributeDescription(vertexFieldsLength + i, 1, Format.R32G32B32A32SFloat, offset));
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32A32SFloat, offset));
+                        loci++;
                         offset += 16;
                     }
                     else throw new Exception("Field " + fields[i] + " of instance info struct is an illegal type");

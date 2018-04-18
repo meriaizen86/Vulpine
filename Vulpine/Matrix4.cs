@@ -100,6 +100,16 @@ namespace Vulpine
             return new Matrix4 { InternalMatrix = Matrix4x4.CreateLookAt((System.Numerics.Vector3)pos, (System.Numerics.Vector3)target, System.Numerics.Vector3.UnitZ) };
         }
 
+        public static Matrix4 CreateOrtho(Vector2 leftTop, Vector2 rightBottom, float nearPlane, float farPlane)
+        {
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateOrthographicOffCenter(rightBottom.X, leftTop.X, rightBottom.Y, leftTop.Y, nearPlane, farPlane) };
+        }
+
+        public static Matrix4 CreateOrthoCenter(Vector2 center, Vector2 size, float nearPlane, float farPlane)
+        {
+            return new Matrix4 { InternalMatrix = Matrix4x4.CreateOrthographicOffCenter(center.X - size.X / 2f, center.X + size.X / 2f, center.Y + size.Y / 2f, center.Y - size.Y / 2f, nearPlane, farPlane) };
+        }
+
         public static Matrix4 CreateBillboardRotation(Vector3 camPos, Vector3 camTarget)
         {
             var ang = (camTarget - camPos).Angle;

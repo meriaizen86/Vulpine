@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
-namespace Vulpine.Text
+namespace Vulpine.Sprite
 {
-    public class TextRenderer : IDisposable
+    public class SpriteRenderer : IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
         public struct ViewProjection
@@ -16,23 +16,41 @@ namespace Vulpine.Text
             public Matrix4 Projection;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SpriteInfo
+        {
+            public Matrix4 Transform;
+            public Vector2 TextureLeftTop;
+            public Vector2 TextureRightBottom;
+            public Vector2 Scale;
+
+            public SpriteInfo(Sprite sprite, Matrix4 trans)
+            {
+                Transform = trans;
+                TextureLeftTop = sprite.Attributes.TextureLeftTop;
+                TextureRightBottom = sprite.Attributes.TextureRightBottom;
+                Scale = sprite.Attributes.Scale;
+            }
+
+            public override string ToString()
+            {
+                return $"[SpriteInfo Transform={Transform} SpriteAttr=[{TextureLeftTop}, {TextureRightBottom} x {Scale}]";
+            }
+        }
+
         Graphics Graphics;
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
         PipelineController Pipeline;
         VKBuffer Instances;
-        VKBuffer UTextTransform;
         VKBuffer UViewProjection;
-        int MaxCharacters;
+        int Count;
 
         public ViewProjection Camera = new ViewProjection { Projection = Matrix4.Identity, View = Matrix4.Identity };
-        public int CharSeperation = 1;
 
-        public TextRenderer(Graphics g, Texture2D tex, int maxCharacters = 128)
+        public SpriteRenderer(Graphics g, Texture2D tex, int maxSprites = 1024)
         {
             Graphics = g;
-            MaxCharacters = maxCharacters;
-            _CharTransforms = new Matrix4[MaxCharacters];
-            Instances = VKBuffer.InstanceInfo<Matrix4>(g, maxCharacters);
+            Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
             UViewProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
 
             Pipeline = new PipelineController(Graphics);
@@ -40,28 +58,23 @@ namespace Vulpine.Text
             Pipeline.DepthWrite = false;
             Pipeline.BlendMode = BlendMode.Alpha;
             Pipeline.Instancing = true;
-            Pipeline.InstanceInfoType = typeof(Matrix4);
-            Pipeline.Shaders = new[] { "text.vert.spv", "text.frag.spv" };
+            Pipeline.InstanceInfoType = typeof(SpriteInfo);
+            Pipeline.Shaders = new[] { "sprite.vert.spv", "sprite.frag.spv" };
             Pipeline.DescriptorItems = new[] {
-                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UTextTransform),
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UViewProjection),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
         }
 
-        public void Build()
+        public void BuildPipeline()
         {
             Pipeline.Build();
         }
 
         public void AddImage(VKImage image)
         {
-            CommandBufferController cb;
-            if (CBuffer.TryGetValue(image, out cb))
-                cb?.Dispose();
-
-            cb = new CommandBufferController(Graphics, image);
-            CBuffer[image] = cb;
+            var cb = new CommandBufferController(Graphics, image);
+            CBuffer.Add(image, cb);
         }
 
         public void RemoveImage(VKImage image)
@@ -69,37 +82,33 @@ namespace Vulpine.Text
             CBuffer.Remove(image);
         }
 
-        static Matrix4[] _CharTransforms;
-        public void Draw(VKImage image, string text, Matrix4 transformation)
+        public void SetSpriteInfo(SpriteInfo[] sprites, int count)
+        {
+            Count = count;
+            Instances.Write(sprites);
+        }
+        
+        public void Draw(VKImage image)
         {
             UViewProjection.Write(ref Camera);
-            UTextTransform.Write(ref transformation);
-
-            for (var i = 0; i < text.Length; i++)
-                GenTransform(i, text[i]);
-            Instances.Write(_CharTransforms);
-
+            
             var cb = CBuffer[image];
             cb.Begin();
             cb.BeginPass(Pipeline);
-            cb.Draw(Graphics.Square, Instances, text.Length);
+            cb.Draw(Graphics.Square, Instances, Count);
             cb.EndPass();
             cb.End();
 
             cb.Submit(true);
+            cb.Reset();
         }
-
-        void GenTransform(int i, char c)
-        {
-            _CharTransforms[i] = Matrix4.CreateTranslation(new Vector3((float)(i * CharSeperation), 0f, 0f));
-        }
-
-
-
+        
         public void Dispose()
         {
             CBuffer?.Values?.DisposeRange();
             Pipeline?.Dispose();
+            Instances?.Dispose();
+            UViewProjection?.Dispose();
         }
     }
 }

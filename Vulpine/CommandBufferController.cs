@@ -39,6 +39,11 @@ namespace Vulpine
                 Context.GraphicsQueue.WaitIdle();
         }
 
+        public void Reset()
+        {
+            CommandBuffer.Reset(CommandBufferResetFlags.None);
+        }
+
         public void Begin()
         {
             CommandBuffer.Begin(new CommandBufferBeginInfo(CommandBufferUsages.SimultaneousUse));
@@ -77,11 +82,11 @@ namespace Vulpine
             CommandBuffer.End();
         }
 
-        public void BeginPass(PipelineController pipeline, VKImage image)
+        public void BeginPass(PipelineController pipeline)
         {
             var renderPassBeginInfo = new RenderPassBeginInfo(
-                image.Framebuffer,
-                new Rect2D(0, 0, image.Size.X, image.Size.Y),
+                Image.Framebuffer,
+                new Rect2D(0, 0, Image.Size.X, Image.Size.Y),
                 new ClearColorValue(),
                 new ClearDepthStencilValue(1f, 0)
             );
