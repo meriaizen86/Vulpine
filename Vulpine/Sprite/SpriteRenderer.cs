@@ -24,14 +24,6 @@ namespace Vulpine.Sprite
             public Vector2 TextureRightBottom;
             public Vector2 Scale;
 
-            public SpriteInfo(Sprite sprite, Matrix4 trans)
-            {
-                Transform = trans;
-                TextureLeftTop = sprite.Attributes.TextureLeftTop;
-                TextureRightBottom = sprite.Attributes.TextureRightBottom;
-                Scale = sprite.Attributes.Scale;
-            }
-
             public override string ToString()
             {
                 return $"[SpriteInfo Transform={Transform} SpriteAttr=[{TextureLeftTop}, {TextureRightBottom} x {Scale}]";
@@ -39,6 +31,7 @@ namespace Vulpine.Sprite
         }
 
         Graphics Graphics;
+        Texture2D Texture;
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
         PipelineController Pipeline;
         VKBuffer Instances;
@@ -47,9 +40,10 @@ namespace Vulpine.Sprite
 
         public ViewProjection Camera = new ViewProjection { Projection = Matrix4.Identity, View = Matrix4.Identity };
 
-        public SpriteRenderer(Graphics g, Texture2D tex, int maxSprites = 1024)
+        public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
         {
             Graphics = g;
+            Texture = tex;
             Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
             UViewProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
 
@@ -59,7 +53,7 @@ namespace Vulpine.Sprite
             Pipeline.BlendMode = BlendMode.Alpha;
             Pipeline.Instancing = true;
             Pipeline.InstanceInfoType = typeof(SpriteInfo);
-            Pipeline.Shaders = new[] { "sprite.vert.spv", "sprite.frag.spv" };
+            Pipeline.Shaders = new[] { vertexShader, fragmentShader };
             Pipeline.DescriptorItems = new[] {
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UViewProjection),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
@@ -109,6 +103,17 @@ namespace Vulpine.Sprite
             Pipeline?.Dispose();
             Instances?.Dispose();
             UViewProjection?.Dispose();
+        }
+
+        public SpriteInfo CreateSpriteInfo(Sprite sprite, Matrix4 trans)
+        {
+            return new SpriteInfo
+            {
+                Transform = trans,
+                TextureLeftTop = sprite.LeftTop / (Vector2)Texture.Size,
+                TextureRightBottom = sprite.RightBottom / (Vector2)Texture.Size,
+                Scale = sprite.RightBottom - sprite.LeftTop
+            };
         }
     }
 }

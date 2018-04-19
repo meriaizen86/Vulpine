@@ -67,7 +67,7 @@ namespace VulpineTest
             Instances = VKBuffer.InstanceInfo<InstanceInfo>(Graphics, BatchSize);
             Instances.Write(Positions);
             BViewProjection = VKBuffer.UniformBuffer<ViewProjection>(Graphics, 1);
-            Tex = Content.Get<Texture2D>("tex.png");
+            Tex = Content.Get<Texture2D>("Data/tex.png");
 
             Pipeline = new PipelineController(Graphics);
             Pipeline.DepthTest = true;
@@ -75,7 +75,7 @@ namespace VulpineTest
             Pipeline.BlendMode = BlendMode.Alpha;
             Pipeline.Instancing = true;
             Pipeline.InstanceInfoType = typeof(InstanceInfo);
-            Pipeline.Shaders = new[] { "billboard.vert.spv", "billboard.frag.spv" };
+            Pipeline.Shaders = new[] { "Data/billboard.vert.spv", "Data/billboard.frag.spv" };
             Pipeline.DescriptorItems = new[] {
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, BViewProjection),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, Tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
@@ -84,9 +84,9 @@ namespace VulpineTest
 
 
             RenderTarget = Texture2D.RenderTarget(Graphics, Size.X, Size.Y);
-            SpriteRenderer = new SpriteRenderer(Graphics, RenderTarget, 1024);
+            SpriteRenderer = new SpriteRenderer(Graphics, RenderTarget, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 1024);
             SpriteRenderer.BuildPipeline();
-            TestSprite = new Sprite(RenderTarget, new Vector2(0f, 0f), new Vector2(Size.X, Size.Y));
+            TestSprite = new Sprite(new Vector2(0f, 0f), new Vector2(Size.X, Size.Y));
             RenderTargetCB = new CommandBufferController(Graphics, RenderTarget);
             RenderTargetCB.Begin();
             RenderTargetCB.Clear(Color.Transparent);
@@ -121,9 +121,9 @@ namespace VulpineTest
 
             SpriteRenderer.Camera = new SpriteRenderer.ViewProjection { Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f), View = Matrix4.Identity };
             SpriteRenderer.SetSpriteInfo(new[] {
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 100f, 0f))),
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 200f, 0f))),
-                new SpriteRenderer.SpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 300f, 0f)))
+                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 100f, 0f))),
+                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 200f, 0f))),
+                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 300f, 0f)))
             }, 3);
             
         }
