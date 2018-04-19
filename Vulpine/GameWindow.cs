@@ -30,8 +30,22 @@ namespace Vulpine
                 return 1.0 / SecondsPerUpdate;
             }
         }
+        public double SecondsPerFrame = 1.0 / 60.0;
+        public double FramesPerSecond
+        {
+            set
+            {
+                SecondsPerFrame = 1.0 / value;
+            }
+            get
+            {
+                return 1.0 / SecondsPerFrame;
+            }
+        }
         public double ActualUPS { get; private set; }
+        public double UpdateTime { get; private set; }
         public double ActualFPS { get; private set; }
+        public double DrawTime { get; private set; }
         public Vector2I Size
         {
             get
@@ -88,7 +102,7 @@ namespace Vulpine
             Running = true;
             var updateSW = new Stopwatch();
             var drawSW = new Stopwatch();
-            var updateCount = 0;
+            var updateCount = 0L;
             var first = false;
             updateSW.Start();
             drawSW.Start();
@@ -103,17 +117,22 @@ namespace Vulpine
                 var elapsed = updateSW.Elapsed;
                 if (elapsed.TotalSeconds > SecondsPerUpdate || first)
                 {
-                    first = false;
+                    
                     updateSW.Restart();
                     OnUpdate(updateCount++);
-                    
+                    UpdateTime = updateSW.Elapsed.TotalSeconds;
                     ActualUPS = 1.0 / elapsed.TotalSeconds;
                 }
 
                 elapsed = drawSW.Elapsed;
-                drawSW.Restart();
-                Draw();
-                ActualFPS = 1.0 / elapsed.TotalSeconds;
+                if (elapsed.TotalSeconds > SecondsPerFrame || first)
+                {
+                    drawSW.Restart();
+                    Draw();
+                    DrawTime = drawSW.Elapsed.TotalSeconds;
+                    ActualFPS = 1.0 / elapsed.TotalSeconds;
+                }
+                first = false;
             }
 
             foreach (var img in Context.SwapchainImages)
@@ -152,7 +171,7 @@ namespace Vulpine
 
         }
 
-        protected virtual void OnUpdate(int tick)
+        protected virtual void OnUpdate(long tick)
         {
 
         }

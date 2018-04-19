@@ -106,10 +106,13 @@ namespace VulpineTest
             SpriteRenderer.BuildPipeline();
         }
 
-        protected override void OnUpdate(int tick)
+        long Tick;
+        long LastUpdateTick;
+        protected override void OnUpdate(long tick)
         {
             base.OnUpdate(tick);
 
+            Tick = tick;
             if (tick % 15 == 0)
                 Title = $"FPS: {ActualFPS}";
 
@@ -119,11 +122,12 @@ namespace VulpineTest
             VP.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.ToRad(80f), (float)Width / (float)Height, 0.1f, 1000f);
             BViewProjection.Write(ref VP);
 
-            SpriteRenderer.Camera = new SpriteRenderer.ViewProjection { Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f), View = Matrix4.Identity };
+            SpriteRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f);
+            LastUpdateTick = Tick;
             SpriteRenderer.SetSpriteInfo(new[] {
-                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 100f, 0f))),
-                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 200f, 0f))),
-                SpriteRenderer.CreateSpriteInfo(TestSprite, Matrix4.CreateTranslation(new Vector3((float)Size.X / 2f, (float)Size.Y / 2f + 300f, 0f)))
+                SpriteRenderer.CreateSpriteInfo(TestSprite, new Vector2((float)Size.X / 2f, (float)Size.Y / 2f + 100f), Vector2.One, Matrix4.CreateRotationZ(0f), Vector2.Zero),
+                SpriteRenderer.CreateSpriteInfo(TestSprite, new Vector2((float)Size.X / 2f, (float)Size.Y / 2f + 200f), Vector2.One, Matrix4.CreateRotationZ(0f), Vector2.Zero),
+                SpriteRenderer.CreateSpriteInfo(TestSprite, new Vector2((float)Size.X / 2f, (float)Size.Y / 2f + 300f), Vector2.One, Matrix4.CreateRotationZ(0f), Vector2.Zero)
             }, 3);
             
         }
@@ -165,7 +169,7 @@ namespace VulpineTest
             CommandBuffer[image].Submit(false);
 
             RenderTargetCB.Submit(true);
-            SpriteRenderer.Draw(image);
+            SpriteRenderer.Draw(image, Tick - LastUpdateTick);
         }
     }
 }

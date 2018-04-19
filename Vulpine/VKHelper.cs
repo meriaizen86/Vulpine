@@ -297,7 +297,7 @@ namespace Vulpine
             for (var i = 0; i < fields.Length; i++)
             {
                 var ftype = fields[i].FieldType;
-                if (ftype == typeof(Vector3))
+                if (ftype == typeof(Vector3) || ftype == typeof(Angle))
                 {
                     vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32SFloat, offset));
                     offset += 12;
@@ -341,7 +341,7 @@ namespace Vulpine
                 for (var i = 0; i < fields.Length; i++)
                 {
                     var ftype = fields[i].FieldType;
-                    if (ftype == typeof(Vector3))
+                    if (ftype == typeof(Vector3) || ftype == typeof(Angle))
                     {
                         vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32SFloat, offset));
                         loci++;

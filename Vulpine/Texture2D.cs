@@ -29,6 +29,7 @@ namespace Vulpine
             View = view;
             Format = format;
             Size = size;
+            SizeF = (Vector2)Size;
             IsRenderTarget = renderTarget;
             if (IsRenderTarget)
                 Image.CreateDepthStencil();
@@ -40,6 +41,7 @@ namespace Vulpine
         internal ImageView View { get; }
         internal DeviceMemory Memory { get; }
         public Vector2I Size { get; }
+        internal Vector2 SizeF { get; }
         public bool IsRenderTarget { get; }
         //internal Sampler Sampler { get; }
 

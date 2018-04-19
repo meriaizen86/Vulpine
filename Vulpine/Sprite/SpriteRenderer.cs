@@ -10,23 +10,18 @@ namespace Vulpine.Sprite
     public class SpriteRenderer : IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
-        public struct ViewProjection
-        {
-            public Matrix4 View;
-            public Matrix4 Projection;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         public struct SpriteInfo
         {
-            public Matrix4 Transform;
+            public Vector2 Translation;
+            public Vector2 Scale;
+            public Matrix4 Rotation;
+            public Vector2 Velocity;
             public Vector2 TextureLeftTop;
             public Vector2 TextureRightBottom;
-            public Vector2 Scale;
 
             public override string ToString()
             {
-                return $"[SpriteInfo Transform={Transform} SpriteAttr=[{TextureLeftTop}, {TextureRightBottom} x {Scale}]";
+                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} SpriteAttr=[{TextureLeftTop}, {TextureRightBottom} x {Scale}]";
             }
         }
 
@@ -35,17 +30,19 @@ namespace Vulpine.Sprite
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
         PipelineController Pipeline;
         VKBuffer Instances;
-        VKBuffer UViewProjection;
+        VKBuffer UProjection;
+        VKBuffer UTime;
         int Count;
 
-        public ViewProjection Camera = new ViewProjection { Projection = Matrix4.Identity, View = Matrix4.Identity };
+        public Matrix4 Projection = Matrix4.Identity;
 
         public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
         {
             Graphics = g;
             Texture = tex;
             Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
-            UViewProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
+            UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
+            UTime = VKBuffer.UniformBuffer<float>(g, 1);
 
             Pipeline = new PipelineController(Graphics);
             Pipeline.DepthTest = false;
@@ -55,7 +52,8 @@ namespace Vulpine.Sprite
             Pipeline.InstanceInfoType = typeof(SpriteInfo);
             Pipeline.Shaders = new[] { vertexShader, fragmentShader };
             Pipeline.DescriptorItems = new[] {
-                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UViewProjection),
+                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UProjection),
+                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UTime),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
         }
@@ -81,11 +79,12 @@ namespace Vulpine.Sprite
             Count = count;
             Instances.Write(sprites);
         }
-        
-        public void Draw(VKImage image)
+
+        public void Draw(VKImage image, float tick)
         {
-            UViewProjection.Write(ref Camera);
-            
+            UProjection.Write(ref Projection);
+            UTime.Write(ref tick);
+
             var cb = CBuffer[image];
             cb.Begin();
             cb.BeginPass(Pipeline);
@@ -96,23 +95,25 @@ namespace Vulpine.Sprite
             cb.Submit(true);
             cb.Reset();
         }
-        
+
         public void Dispose()
         {
             CBuffer?.Values?.DisposeRange();
             Pipeline?.Dispose();
             Instances?.Dispose();
-            UViewProjection?.Dispose();
+            UProjection?.Dispose();
         }
 
-        public SpriteInfo CreateSpriteInfo(Sprite sprite, Matrix4 trans)
+        public SpriteInfo CreateSpriteInfo(Sprite sprite, Vector2 translation, Vector2 scale, Matrix4 rotation, Vector2 velocity)
         {
             return new SpriteInfo
             {
-                Transform = trans,
-                TextureLeftTop = sprite.LeftTop / (Vector2)Texture.Size,
-                TextureRightBottom = sprite.RightBottom / (Vector2)Texture.Size,
-                Scale = sprite.RightBottom - sprite.LeftTop
+                Translation = translation,
+                TextureLeftTop = sprite.LeftTop / Texture.SizeF,
+                TextureRightBottom = sprite.RightBottom / Texture.SizeF,
+                Scale = (sprite.RightBottom - sprite.LeftTop) * scale,
+                Rotation = rotation,
+                Velocity = velocity
             };
         }
     }
