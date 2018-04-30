@@ -119,7 +119,7 @@ namespace Vulpine
 
         internal void Build()
         {
-            ComputeCommandPool?.Reset();
+            GraphicsCommandPool?.Reset();
             ComputeCommandPool?.Reset();
 
             ImageAvailableSemaphore?.Dispose();
@@ -135,6 +135,10 @@ namespace Vulpine
 
         public override void Dispose()
         {
+            if (!Window.Running)
+                return;
+            GraphicsCommandPool?.Reset();
+            ComputeCommandPool?.Reset();
             Pipelines.DisposeRange();
 
             base.Dispose();

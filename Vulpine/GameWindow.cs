@@ -14,7 +14,7 @@ namespace Vulpine
     public class GameWindow : EasyDisposable
     {
         Form Form;
-        bool Running;
+        internal bool Running { get; private set; }
         internal Context Context;
         public Graphics Graphics => Context.Graphics;
         public Content Content => Context.Content;
@@ -113,6 +113,8 @@ namespace Vulpine
             while (Running)
             {
                 Application.DoEvents();
+                if (!Running)
+                    break;
 
                 var elapsed = updateSW.Elapsed;
                 if (elapsed.TotalSeconds > SecondsPerUpdate || first)
@@ -135,6 +137,9 @@ namespace Vulpine
                 first = false;
             }
 
+            Context.GraphicsQueue.WaitIdle();
+            Context.PresentQueue.WaitIdle();
+            Context.Dispose();
             foreach (var img in Context.SwapchainImages)
                 OnDeleteSwapchainImage(img);
             OnFinish();

@@ -18,13 +18,15 @@ namespace Vulpine.Sprite
             public Vector2 Velocity;
             public Vector2 TextureLeftTop;
             public Vector2 TextureRightBottom;
+            public Vector2 Center;
 
             public override string ToString()
             {
-                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} SpriteAttr=[{TextureLeftTop}, {TextureRightBottom} x {Scale}]";
+                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Scale={Scale} Center={Center}]";
             }
         }
 
+        public int MaxSprites { get; private set; }
         Graphics Graphics;
         Texture2D Texture;
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
@@ -38,6 +40,7 @@ namespace Vulpine.Sprite
 
         public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
         {
+            MaxSprites = maxSprites;
             Graphics = g;
             Texture = tex;
             Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
@@ -88,7 +91,7 @@ namespace Vulpine.Sprite
             var cb = CBuffer[image];
             cb.Begin();
             cb.BeginPass(Pipeline);
-            cb.Draw(Graphics.Square, Instances, Count);
+            cb.Draw(Graphics.SquareSprite, Instances, Count);
             cb.EndPass();
             cb.End();
 
@@ -111,7 +114,8 @@ namespace Vulpine.Sprite
                 Translation = translation,
                 TextureLeftTop = sprite.LeftTop / Texture.SizeF,
                 TextureRightBottom = sprite.RightBottom / Texture.SizeF,
-                Scale = (sprite.RightBottom - sprite.LeftTop) * scale,
+                Center = sprite.TextureCenter,
+                Scale = sprite.Size * scale,
                 Rotation = rotation,
                 Velocity = velocity
             };

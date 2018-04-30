@@ -17,8 +17,8 @@ namespace Vulpine
         public Vector2I ViewportSize;
         public int Samples = 1;
 
-
         public Primitive Square { get; private set; }
+        public Primitive SquareSprite { get; private set; }
         public Primitive Triangle { get; private set; }
 
         internal Graphics(Context context)
@@ -31,6 +31,16 @@ namespace Vulpine
                     new Vertex( 0.5f, -0.5f, 0f,    0f, 0f, 1f,     1f, 0f  ),
                     new Vertex( 0.5f, 0.5f, 0f,     0f, 0f, 1f,     1f, 1f  ),
                     new Vertex( -0.5f, 0.5f, 0f,    0f, 0f, 1f,     0f, 1f  ),
+                },
+                new int[] {
+                    0, 1, 2, 2, 3, 0
+                });
+            SquareSprite = new Primitive(Context,
+                new Vertex[] {
+                    new Vertex( 0f, 0f, 0f,     0f, 0f, 1f,     0f, 0f  ),
+                    new Vertex( 1f, 0f, 0f,    0f, 0f, 1f,     1f, 0f  ),
+                    new Vertex( 1f, 1f, 0f,     0f, 0f, 1f,     1f, 1f  ),
+                    new Vertex( 0f, 1f, 0f,     0f, 0f, 1f,     0f, 1f  ),
                 },
                 new int[] {
                     0, 1, 2, 2, 3, 0

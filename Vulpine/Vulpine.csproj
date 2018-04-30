@@ -64,6 +64,8 @@
     <Compile Include="PipelineController.cs" />
     <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Sprite\Sprite.cs" />
+    <Compile Include="Sprite\TextRenderer.cs" />
+    <Compile Include="Sprite\SpriteFont.cs" />
     <Compile Include="Text\TextRenderer.cs" />
     <Compile Include="VKBuffer.cs" />
     <Compile Include="Content.cs" />
