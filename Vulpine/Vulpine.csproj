@@ -62,6 +62,7 @@
     <Compile Include="Matrix3.cs" />
     <Compile Include="Matrix4.cs" />
     <Compile Include="PipelineController.cs" />
+    <Compile Include="Sprite\SpriteFontChar.cs" />
     <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Sprite\Sprite.cs" />
     <Compile Include="Sprite\TextRenderer.cs" />

@@ -92,46 +92,51 @@ namespace Vulpine
 
         internal static Texture2D FromStream(Context ctx, Stream stream)
         {
+            using (var img = new System.Drawing.Bitmap(stream))
+            {
+                return FromBitmap(ctx, img);
+            }
+        }
+
+        internal static Texture2D FromBitmap(Context ctx, System.Drawing.Bitmap img)
+        {
             const int numberOfMipmapLevels = 1;
             const int pixelDepth = 4;
             const Format pixelFormat = Format.R8G8B8A8UNorm;//Format.B8G8R8A8UNorm;
 
-            using (var img = new System.Drawing.Bitmap(stream))
+            var bytes = new Byte[img.Width * img.Height * pixelDepth];
+            var n = 0;
+            for (var y = 0; y < img.Height; y++)
             {
-                var bytes = new Byte[img.Width * img.Height * pixelDepth];
-                var n = 0;
-                for (var y = 0; y < img.Height; y++)
+                for (var x = 0; x < img.Width; x++)
                 {
-                    for (var x = 0; x < img.Width; x++)
-                    {
-                        var px = img.GetPixel(x, y);
-                        bytes[n] = px.R;
-                        bytes[n + 1] = px.G;
-                        bytes[n + 2] = px.B;
-                        bytes[n + 3] = px.A;
-                        n += 4;
-                    }
+                    var px = img.GetPixel(x, y);
+                    bytes[n] = px.R;
+                    bytes[n + 1] = px.G;
+                    bytes[n + 2] = px.B;
+                    bytes[n + 3] = px.A;
+                    n += 4;
                 }
-
-                var data = new TextureData
-                {
-                    Mipmaps = new TextureData.Mipmap[numberOfMipmapLevels],
-                    Format = pixelFormat
-                };
-
-                for (int i = 0; i < numberOfMipmapLevels; i++)
-                {
-                    var mipmap = new TextureData.Mipmap
-                    {
-                        Size = img.Width * img.Height * pixelDepth,
-                        Extent = new Extent3D(img.Width, img.Height, 1)
-                    };
-                    mipmap.Data = bytes;
-                    data.Mipmaps[i] = mipmap;
-                }
-
-                return Texture2D.FromTextureData(ctx, data);
             }
+
+            var data = new TextureData
+            {
+                Mipmaps = new TextureData.Mipmap[numberOfMipmapLevels],
+                Format = pixelFormat
+            };
+
+            for (int i = 0; i < numberOfMipmapLevels; i++)
+            {
+                var mipmap = new TextureData.Mipmap
+                {
+                    Size = img.Width * img.Height * pixelDepth,
+                    Extent = new Extent3D(img.Width, img.Height, 1)
+                };
+                mipmap.Data = bytes;
+                data.Mipmaps[i] = mipmap;
+            }
+
+            return Texture2D.FromTextureData(ctx, data);
         }
 
         internal static Texture2D FromTextureData(Context ctx, TextureData tex2D)

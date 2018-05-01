@@ -79,10 +79,11 @@ namespace VulpineTest
             };
             Pipeline.Build();
 
-            var font = SpriteFont.FromSprites(
-                Content.Get<Texture2D>("Data/ascii.png"), new Vector2(10f, 18f), Vector2.Zero, new Vector2(16f, 16f), 256 / 16,
+            /*var font = SpriteFont.FromSprites(
+                Graphics, Content.Get<Texture2D>("Data/ascii.png"), new Vector2(10f, 18f), Vector2.Zero, new Vector2(16f, 16f), 256 / 16,
                 " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-            );
+            );*/
+            var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127);
             TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv");
             TextRenderer.BuildPipeline();
         }

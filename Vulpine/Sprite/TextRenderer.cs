@@ -124,7 +124,6 @@ namespace Vulpine.Sprite
         void UpdateSpriteInfo()
         {
             var trans = Position;
-            var sep = Font.Separation * Scale;
             for (var i = 0; i < Text.Length; i++)
             {
                 if (Text[i] == '\r')
@@ -132,13 +131,14 @@ namespace Vulpine.Sprite
                 if (Text[i] == '\n')
                 {
                     trans.X = Position.X;
-                    trans.Y += sep.Y;
+                    trans.Y += Font.VerticalSeparation;
                     continue;
                 }
 
-                var spr = SpriteRenderer.CreateSpriteInfo(Font.GetSprite(Text[i]), trans, Scale, Matrix4.Identity, Vector2.Zero);
+                var sfchar = Font.GetSpriteFontChar(Text[i]);
+                var spr = SpriteRenderer.CreateSpriteInfo(sfchar.Sprite, trans, Scale, Matrix4.Identity, Vector2.Zero);
                 SpriteInfo[i] = spr;
-                trans.X += sep.X;
+                trans.X += sfchar.SeparationToNext;
             }
             SpriteRenderer.SetSpriteInfo(SpriteInfo, Text.Length);
         }
