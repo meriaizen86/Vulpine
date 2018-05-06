@@ -43,6 +43,7 @@ namespace VulpineTest
         Dictionary<VKImage, CommandBufferController> CommandBuffer = new Dictionary<VKImage, CommandBufferController>();
 
         TextRenderer TextRenderer;
+        TextRenderer.TextInstance[] TextInstances;
 
         public VulpineGame() : base("Vulpine Test", new Vector2I(800, 600))
         {
@@ -84,8 +85,9 @@ namespace VulpineTest
                 " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             );*/
             var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127);
-            TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv");
+            TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 64);
             TextRenderer.BuildPipeline();
+            TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, "N/A") };
         }
 
         protected override void OnResize()
@@ -107,7 +109,8 @@ namespace VulpineTest
             Tick = tick;
             if (tick % 15 == 0)
             {
-                TextRenderer.Text = $"FPS: {ActualFPS}\nUPS: {ActualUPS}\nBillboards: {BatchSize}";
+                TextInstances[0].Text = $"FPS: {ActualFPS:#.##}\nUPS: {ActualUPS:#.##}\nBillboards: {BatchSize}";
+                TextRenderer.SetTextInstances(TextInstances, 1);
             }
 
             CamAngle = new Angle(0f, CamAngle.Pitch, CamAngle.Yaw + 0.2f);

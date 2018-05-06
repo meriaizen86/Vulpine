@@ -8,7 +8,22 @@ namespace Vulpine.Sprite
 {
     public class TextRenderer : IDisposable
     {
+        public struct TextInstance
+        {
+            public Vector2 Position;
+            public Vector2 Scale;
+            public string Text;
+
+            public TextInstance(Vector2 pos, Vector2 scale, string text)
+            {
+                Position = pos;
+                Scale = scale;
+                Text = text;
+            }
+        }
+
         public SpriteRenderer SpriteRenderer;
+        public SpriteFont Font { get; private set; }
         
         public Matrix4 Projection
         {
@@ -22,72 +37,15 @@ namespace Vulpine.Sprite
             }
         }
 
-        public int MaxChars => SpriteRenderer.MaxSprites;
+        int MaxTotalChars => SpriteRenderer.MaxSprites;
 
-        bool Changed = false;
-        SpriteFont _Font;
-        public SpriteFont Font
-        {
-            get
-            {
-                return _Font;
-            }
-            set
-            {
-                if (_Font == value)
-                    return;
-                _Font = value;
-                Changed = true;
-            }
-        }
-        Vector2 _Position = Vector2.Zero;
-        public Vector2 Position
-        {
-            get
-            {
-                return _Position;
-            }
-            set
-            {
-                _Position = value;
-                Changed = true;
-            }
-        }
-        Vector2 _Scale = Vector2.One;
-        public Vector2 Scale
-        {
-            get
-            {
-                return _Scale;
-            }
-            set
-            {
-                _Scale = value;
-                Changed = true;
-            }
-        }
-        string _Text = "";
-        public string Text
-        {
-            get
-            {
-                return _Text;
-            }
-            set
-            {
-                if (_Text == value)
-                    return;
-                _Text = value;
-                Changed = true;
-            }
-        }
-
+        int Count;
         SpriteRenderer.SpriteInfo[] SpriteInfo;
-        public TextRenderer(Graphics g, SpriteFont font, string vertexShader, string fragmentShader, int maxChars = 256)
+        public TextRenderer(Graphics g, SpriteFont font, string vertexShader, string fragmentShader, int maxTotalChars = 128)
         {
             Font = font;
-            SpriteInfo = new SpriteRenderer.SpriteInfo[maxChars];
-            SpriteRenderer = new SpriteRenderer(g, font.Texture, vertexShader, fragmentShader, maxChars);
+            SpriteInfo = new SpriteRenderer.SpriteInfo[maxTotalChars];
+            SpriteRenderer = new SpriteRenderer(g, font.Texture, vertexShader, fragmentShader, maxTotalChars);
         }
 
         public void BuildPipeline()
@@ -112,35 +70,40 @@ namespace Vulpine.Sprite
 
         public void Draw(VKImage image)
         {
-            if (Changed)
-            {
-                Changed = false;
-                UpdateSpriteInfo();
-            }
-
             SpriteRenderer.Draw(image, 0f);
         }
 
-        void UpdateSpriteInfo()
+        public void SetTextInstances(IList<TextInstance> instances, int count)
         {
-            var trans = Position;
-            for (var i = 0; i < Text.Length; i++)
-            {
-                if (Text[i] == '\r')
-                    continue;
-                if (Text[i] == '\n')
-                {
-                    trans.X = Position.X;
-                    trans.Y += Font.VerticalSeparation;
-                    continue;
-                }
+            Count = count;
+            UpdateSpriteInfo(instances);
+        }
 
-                var sfchar = Font.GetSpriteFontChar(Text[i]);
-                var spr = SpriteRenderer.CreateSpriteInfo(sfchar.Sprite, trans, Scale, Matrix4.Identity, Vector2.Zero);
-                SpriteInfo[i] = spr;
-                trans.X += sfchar.SeparationToNext;
+        void UpdateSpriteInfo(IList<TextInstance> instances)
+        {
+            var n = 0;
+            for (var t = 0; t < Count; t++)
+            {
+                var inst = instances[t];
+                var trans = inst.Position;
+                for (var i = 0; i < inst.Text.Length && i < MaxTotalChars; i++)
+                {
+                    if (inst.Text[i] == '\r')
+                        continue;
+                    if (inst.Text[i] == '\n')
+                    {
+                        trans.X = inst.Position.X;
+                        trans.Y += Font.VerticalSeparation * inst.Scale.Y;
+                        continue;
+                    }
+
+                    var sfchar = Font.GetSpriteFontChar(inst.Text[i]);
+                    var spr = SpriteRenderer.CreateSpriteInfo(sfchar.Sprite, trans, inst.Scale, Matrix4.Identity, Vector2.Zero);
+                    SpriteInfo[n++] = spr;
+                    trans.X += sfchar.SeparationToNext * inst.Scale.X;
+                }
             }
-            SpriteRenderer.SetSpriteInfo(SpriteInfo, Text.Length);
+            SpriteRenderer.SetSpriteInfo(SpriteInfo, n);
         }
     }
 }
