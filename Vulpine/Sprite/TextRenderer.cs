@@ -12,12 +12,14 @@ namespace Vulpine.Sprite
         {
             public Vector2 Position;
             public Vector2 Scale;
+            public Vector2 Velocity;
             public string Text;
 
-            public TextInstance(Vector2 pos, Vector2 scale, string text)
+            public TextInstance(Vector2 pos, Vector2 scale, Vector2 velocity, string text)
             {
                 Position = pos;
                 Scale = scale;
+                Velocity = velocity;
                 Text = text;
             }
         }
@@ -68,9 +70,9 @@ namespace Vulpine.Sprite
             SpriteRenderer.RemoveImage(image);
         }
 
-        public void Draw(VKImage image)
+        public void Draw(VKImage image, float tick)
         {
-            SpriteRenderer.Draw(image, 0f);
+            SpriteRenderer.Draw(image, tick);
         }
 
         public void SetTextInstances(IList<TextInstance> instances, int count)
@@ -98,7 +100,7 @@ namespace Vulpine.Sprite
                     }
 
                     var sfchar = Font.GetSpriteFontChar(inst.Text[i]);
-                    var spr = SpriteRenderer.CreateSpriteInfo(sfchar.Sprite, trans, inst.Scale, Matrix4.Identity, Vector2.Zero);
+                    var spr = SpriteRenderer.CreateSpriteInfo(sfchar.Sprite, trans, inst.Scale, Matrix4.Identity, inst.Velocity);
                     SpriteInfo[n++] = spr;
                     trans.X += sfchar.SeparationToNext * inst.Scale.X;
                 }

@@ -26,7 +26,7 @@ namespace VulpineTest
             public Vector3 Position;
         }
 
-        const int BatchSize = 200000;
+        const int BatchSize = 1000000;
 
         PipelineController Pipeline;
         VKBuffer Instances;
@@ -84,10 +84,10 @@ namespace VulpineTest
                 Graphics, Content.Get<Texture2D>("Data/ascii.png"), new Vector2(10f, 18f), Vector2.Zero, new Vector2(16f, 16f), 256 / 16,
                 " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             );*/
-            var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127);
+            var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127, Color.DarkBlue);
             TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 64);
             TextRenderer.BuildPipeline();
-            TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, "N/A") };
+            TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, Vector2.Zero, "N/A") };
         }
 
         protected override void OnResize()
@@ -160,7 +160,7 @@ namespace VulpineTest
 
             CommandBuffer[image].Submit(false);
 
-            TextRenderer.Draw(image);
+            TextRenderer.Draw(image, Tick);
         }
     }
 }
