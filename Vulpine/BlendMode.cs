@@ -14,6 +14,10 @@ namespace Vulpine
             Factor.SrcAlpha, Factor.OneMinusSrcAlpha, Op.Add,
             Factor.SrcAlpha, Factor.OneMinusSrcAlpha, Op.Add
         );
+        public static BlendMode AlphaPremultiplied = new BlendMode(
+            Factor.One, Factor.OneMinusSrcAlpha, Op.Add,
+            Factor.SrcAlpha, Factor.OneMinusSrcAlpha, Op.Add
+        );
 
         public enum Factor
         {

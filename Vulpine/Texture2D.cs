@@ -104,16 +104,17 @@ namespace Vulpine
             const int pixelDepth = 4;
             const Format pixelFormat = Format.R8G8B8A8UNorm;//Format.B8G8R8A8UNorm;
 
-            var bytes = new Byte[img.Width * img.Height * pixelDepth];
+            var bytes = new byte[img.Width * img.Height * pixelDepth];
             var n = 0;
             for (var y = 0; y < img.Height; y++)
             {
                 for (var x = 0; x < img.Width; x++)
                 {
                     var px = img.GetPixel(x, y);
-                    bytes[n] = px.R;
-                    bytes[n + 1] = px.G;
-                    bytes[n + 2] = px.B;
+                    var fa = px.A / 255f;
+                    bytes[n] = (byte)(px.R * fa);
+                    bytes[n + 1] = (byte)(px.G * fa);
+                    bytes[n + 2] = (byte)(px.B * fa);
                     bytes[n + 3] = px.A;
                     n += 4;
                 }

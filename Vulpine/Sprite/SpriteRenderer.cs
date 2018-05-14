@@ -38,6 +38,18 @@ namespace Vulpine.Sprite
 
         public Matrix4 Projection = Matrix4.Identity;
 
+        BlendMode BlendMode
+        {
+            get
+            {
+                return Pipeline.BlendMode;
+            }
+            set
+            {
+                Pipeline.BlendMode = value;
+            }
+        }
+
         public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
         {
             MaxSprites = maxSprites;
@@ -48,9 +60,10 @@ namespace Vulpine.Sprite
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
 
             Pipeline = new PipelineController(Graphics);
+            Pipeline.ClearDepthOnBeginPass = true;
             Pipeline.DepthTest = false;
             Pipeline.DepthWrite = false;
-            Pipeline.BlendMode = BlendMode.Alpha;
+            Pipeline.BlendMode = BlendMode.AlphaPremultiplied;
             Pipeline.Instancing = true;
             Pipeline.InstanceInfoType = typeof(SpriteInfo);
             Pipeline.Shaders = new[] { vertexShader, fragmentShader };
