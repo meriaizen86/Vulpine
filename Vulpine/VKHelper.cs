@@ -266,7 +266,7 @@ namespace Vulpine
             return g.Context.Device.CreatePipelineLayout(layoutCreateInfo);
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode, PrimitiveType primType, PrimitiveRenderMode pmode, PrimitiveCullMode cmode, float lineWidth)
         {
             if (instancing && instanceInfoType == null)
                 throw new NullReferenceException("Instance info type cannot be null");
@@ -390,25 +390,25 @@ namespace Vulpine
                 }),
                 vertexAttributes.ToArray()
             );
-            var inputAssemblyStateCreateInfo = new PipelineInputAssemblyStateCreateInfo(PrimitiveTopology.TriangleList);
+            var inputAssemblyStateCreateInfo = new PipelineInputAssemblyStateCreateInfo((PrimitiveTopology)primType);
             var viewportStateCreateInfo = new PipelineViewportStateCreateInfo(
                 new Viewport(g.ViewportPosition.X + g.ViewportSize.X, g.ViewportPosition.Y + g.ViewportSize.Y, -g.ViewportSize.X, -g.ViewportSize.Y),
                 new Rect2D(g.ViewportPosition.X, g.ViewportPosition.Y, g.ViewportSize.X, g.ViewportSize.Y));
             var rasterizationStateCreateInfo = new PipelineRasterizationStateCreateInfo
             {
-                PolygonMode = PolygonMode.Fill,
-                CullMode = CullModes.Back,
+                PolygonMode = (PolygonMode)pmode,
+                CullMode = (CullModes)cmode,
                 FrontFace = FrontFace.Clockwise,
-                LineWidth = 1.0f
+                LineWidth = lineWidth
             };
             var multisampleStateCreateInfo = new PipelineMultisampleStateCreateInfo
             {
                 RasterizationSamples =
-                        g.Samples == 64 ? SampleCounts.Count64 :
-                        g.Samples == 32 ? SampleCounts.Count32 :
-                        g.Samples == 16 ? SampleCounts.Count16 :
-                        g.Samples == 8 ? SampleCounts.Count8 :
-                        g.Samples == 4 ? SampleCounts.Count4 :
+                        g.Samples >= 48 ? SampleCounts.Count64 :
+                        g.Samples >= 24 ? SampleCounts.Count32 :
+                        g.Samples >= 12 ? SampleCounts.Count16 :
+                        g.Samples >= 6 ? SampleCounts.Count8 :
+                        g.Samples >= 3 ? SampleCounts.Count4 :
                         g.Samples == 2 ? SampleCounts.Count2 :
                         SampleCounts.Count1,
                 MinSampleShading = 1.0f

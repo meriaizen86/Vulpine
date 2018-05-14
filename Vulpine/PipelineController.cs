@@ -26,6 +26,10 @@ namespace Vulpine
         public bool Instancing = false;
         public Type InstanceInfoType = null;
         public bool ClearDepthOnBeginPass = true;
+        public PrimitiveType PrimitiveType = PrimitiveType.Triangles;
+        public PrimitiveRenderMode PrimitiveRenderMode = PrimitiveRenderMode.Fill;
+        public PrimitiveCullMode PrimitiveCullMode = PrimitiveCullMode.None;
+        public float LineWidth = 1.0f;
 
         public PipelineController(Graphics g)
         {
@@ -46,7 +50,7 @@ namespace Vulpine
             DescriptorPool = VKHelper.CreateDescriptorPool(Graphics, DescriptorItems);
             DescriptorSet = VKHelper.CreateDescriptorSet(DescriptorPool, DescriptorSetLayout, DescriptorItems, out UsingSamplers);
             RenderPass = VKHelper.CreateRenderPass(Graphics, ClearDepthOnBeginPass);
-            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType, BlendMode);
+            Pipeline = VKHelper.CreateGraphicsPipeline(Graphics, PipelineLayout, RenderPass, Shaders, DepthTest, DepthWrite, Instancing, InstanceInfoType, BlendMode, PrimitiveType, PrimitiveRenderMode, PrimitiveCullMode, LineWidth);
         }
 
         public void Dispose()
