@@ -46,6 +46,17 @@ namespace Vulpine
         public double UpdateTime { get; private set; }
         public double ActualFPS { get; private set; }
         public double DrawTime { get; private set; }
+        public Vector2I Position
+        {
+            get
+            {
+                return new Vector2I(Form.ClientRectangle.X, Form.ClientRectangle.Y);
+            }
+            set
+            {
+                Form.SetDesktopLocation(value.X, value.Y);
+            }
+        }
         public Vector2I Size
         {
             get
@@ -69,6 +80,46 @@ namespace Vulpine
             }
         }
 
+        public Vector2I MousePosition
+        {
+            get
+            {
+                return new Vector2I(Cursor.Position.X, Cursor.Position.Y);
+            }
+            set
+            {
+                Cursor.Position = new System.Drawing.Point(value.X, value.Y);
+            }
+        }
+        public System.Drawing.Rectangle MouseClip
+        {
+            get
+            {
+                return Cursor.Clip;
+            }
+            set
+            {
+                Cursor.Clip = value;
+            }
+        }
+
+        bool _MouseVisible = true;
+        public bool MouseVisible
+        {
+            get
+            {
+                return _MouseVisible;
+            }
+            set
+            {
+                _MouseVisible = value;
+                if (value)
+                    Cursor.Show();
+                else
+                    Cursor.Hide();
+            }
+        }
+
         public GameWindow(string title, Vector2I size)
         {
             Form = ToDispose(new Form
@@ -81,12 +132,34 @@ namespace Vulpine
                 Visible = true
             });
 
+            //Form.Cursor = new Cursor(Cursor.Current.Handle);
+
             Form.HandleDestroyed += (sender, e) => Running = false;
 
             Form.Resize += (sender, e) =>
             {
                 OnResize();
                 AfterResize();
+            };
+
+            Form.KeyDown += (sender, e) =>
+            {
+                OnKeyDown(e);
+            };
+
+            Form.KeyUp += (sender, e) =>
+            {
+                OnKeyUp(e);
+            };
+
+            Form.MouseDown += (sender, e) =>
+            {
+                OnMouseDown();
+            };
+
+            Form.MouseUp += (sender, e) =>
+            {
+                OnMouseUp();
             };
 
             Context = ToDispose(new Context(this));
@@ -145,6 +218,11 @@ namespace Vulpine
             OnFinish();
         }
 
+        public void Close()
+        {
+            Running = false;
+        }
+
         protected virtual void OnResize()
         {
             
@@ -201,6 +279,26 @@ namespace Vulpine
         }
 
         protected virtual void OnDrawToSwapchainImage(VKImage image)
+        {
+            
+        }
+
+        protected virtual void OnKeyDown(KeyEventArgs key)
+        {
+
+        }
+
+        protected virtual void OnKeyUp(KeyEventArgs key)
+        {
+
+        }
+
+        protected virtual void OnMouseDown()
+        {
+            
+        }
+
+        protected virtual void OnMouseUp()
         {
             
         }

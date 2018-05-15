@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Drawing;
 
@@ -39,6 +37,8 @@ namespace VulpineTest
         Vector3 CamTarget = new Vector3(0f, 0f, 0f);
         Angle CamAngle = new Angle(0f, 9f, 0f);
         float CamDist = 10f;
+
+        bool MouseState;
 
         Dictionary<VKImage, CommandBufferController> CommandBuffer = new Dictionary<VKImage, CommandBufferController>();
 
@@ -109,7 +109,7 @@ namespace VulpineTest
             Tick = tick;
             if (tick % 15 == 0)
             {
-                TextInstances[0].Text = $"FPS: {ActualFPS:#.##}\nUPS: {ActualUPS:#.##}\nBillboards: {BatchSize}";
+                TextInstances[0].Text = $"FPS: {ActualFPS:#.##}\nUPS: {ActualUPS:#.##}\nBillboards: {BatchSize}\nMouse: {(MouseState ? "Down" : "Up")}";
                 TextRenderer.SetTextInstances(TextInstances, 1);
             }
 
@@ -161,6 +161,33 @@ namespace VulpineTest
             CommandBuffer[image].Submit(false);
 
             TextRenderer.Draw(image, Tick);
+        }
+
+        protected override void OnKeyDown(System.Windows.Forms.KeyEventArgs key)
+        {
+            base.OnKeyDown(key);
+
+            switch (key.KeyCode)
+            {
+                case System.Windows.Forms.Keys.Escape:
+                    Close();
+                    break;
+            }
+        }
+
+        protected override void OnKeyUp(System.Windows.Forms.KeyEventArgs key)
+        {
+            base.OnKeyUp(key);
+        }
+
+        protected override void OnMouseDown()
+        {
+            MouseState = true;
+        }
+
+        protected override void OnMouseUp()
+        {
+            MouseState = false;
         }
     }
 }
