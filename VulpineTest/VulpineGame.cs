@@ -85,7 +85,7 @@ namespace VulpineTest
                 " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             );*/
             var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127, Color.DarkBlue);
-            TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 64);
+            TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 128);
             TextRenderer.BuildPipeline();
             TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, Vector2.Zero, "N/A") };
         }
@@ -109,7 +109,12 @@ namespace VulpineTest
             Tick = tick;
             if (tick % 15 == 0)
             {
-                TextInstances[0].Text = $"FPS: {ActualFPS:#.##}\nUPS: {ActualUPS:#.##}\nBillboards: {BatchSize}\nMouse: {(MouseState ? "Down" : "Up")}";
+                TextInstances[0].Text =
+                    $"FPS: {ActualFPS:#.##}\n" +
+                    $"UPS: {ActualUPS:#.##}\n" +
+                    $"Billboards: {BatchSize}\n" + 
+                    $"Mouse: {(MouseState ? "Down" : "Up")}\n" +
+                    $"Mouse position: {MousePositionWindow}";
                 TextRenderer.SetTextInstances(TextInstances, 1);
             }
 
@@ -166,6 +171,8 @@ namespace VulpineTest
         protected override void OnKeyDown(System.Windows.Forms.KeyEventArgs key)
         {
             base.OnKeyDown(key);
+
+            Console.WriteLine(key.KeyCode.ToString());
 
             switch (key.KeyCode)
             {

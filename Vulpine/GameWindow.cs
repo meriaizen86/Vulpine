@@ -50,7 +50,7 @@ namespace Vulpine
         {
             get
             {
-                return new Vector2I(Form.ClientRectangle.X, Form.ClientRectangle.Y);
+                return new Vector2I(Form.DesktopLocation.X, Form.DesktopLocation.Y);
             }
             set
             {
@@ -79,7 +79,6 @@ namespace Vulpine
                 Form.Text = value;
             }
         }
-
         public Vector2I MousePosition
         {
             get
@@ -89,6 +88,18 @@ namespace Vulpine
             set
             {
                 Cursor.Position = new System.Drawing.Point(value.X, value.Y);
+            }
+        }
+        public Vector2I MousePositionWindow
+        {
+            get
+            {
+                var relatuve = Form.PointToClient(Cursor.Position);
+                return new Vector2I(relatuve.X, relatuve.Y);
+            }
+            set
+            {
+                Cursor.Position = Form.PointToScreen(new System.Drawing.Point(value.X, value.Y));
             }
         }
         public System.Drawing.Rectangle MouseClip
