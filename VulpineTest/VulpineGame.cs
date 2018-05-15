@@ -187,14 +187,16 @@ namespace VulpineTest
             base.OnKeyUp(key);
         }
 
-        protected override void OnMouseDown()
+        protected override void OnMouseDown(System.Windows.Forms.MouseEventArgs e)
         {
-            MouseState = true;
+            if (e.Button == System.Windows.Forms.MouseButtons.Left)
+                MouseState = true;
         }
 
-        protected override void OnMouseUp()
+        protected override void OnMouseUp(System.Windows.Forms.MouseEventArgs e)
         {
-            MouseState = false;
+            if (e.Button == System.Windows.Forms.MouseButtons.Left)
+                MouseState = false;
         }
     }
 }

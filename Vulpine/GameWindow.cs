@@ -165,12 +165,12 @@ namespace Vulpine
 
             Form.MouseDown += (sender, e) =>
             {
-                OnMouseDown();
+                OnMouseDown(e);
             };
 
             Form.MouseUp += (sender, e) =>
             {
-                OnMouseUp();
+                OnMouseUp(e);
             };
 
             Context = ToDispose(new Context(this));
@@ -294,22 +294,22 @@ namespace Vulpine
             
         }
 
-        protected virtual void OnKeyDown(KeyEventArgs key)
+        protected virtual void OnKeyDown(KeyEventArgs e)
         {
 
         }
 
-        protected virtual void OnKeyUp(KeyEventArgs key)
+        protected virtual void OnKeyUp(KeyEventArgs e)
         {
 
         }
 
-        protected virtual void OnMouseDown()
+        protected virtual void OnMouseDown(MouseEventArgs e)
         {
             
         }
 
-        protected virtual void OnMouseUp()
+        protected virtual void OnMouseUp(MouseEventArgs e)
         {
             
         }
