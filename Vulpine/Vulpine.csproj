@@ -39,6 +39,10 @@
       <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -65,6 +69,7 @@
     <Compile Include="PrimitiveCullMode.cs" />
     <Compile Include="PrimitiveRenderMode.cs" />
     <Compile Include="PrimitiveType.cs" />
+    <Compile Include="MeshRenderer.cs" />
     <Compile Include="Sprite\SpriteFontChar.cs" />
     <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Sprite\Sprite.cs" />
@@ -75,7 +80,7 @@
     <Compile Include="Context.cs" />
     <Compile Include="EasyDisposable.cs" />
     <Compile Include="GameWindow.cs" />
-    <Compile Include="Primitive.cs" />
+    <Compile Include="Mesh.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Texture2D.cs" />
     <Compile Include="Vector2.cs" />

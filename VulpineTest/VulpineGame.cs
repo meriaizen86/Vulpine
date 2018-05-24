@@ -45,6 +45,8 @@ namespace VulpineTest
         TextRenderer TextRenderer;
         TextRenderer.TextInstance[] TextInstances;
 
+        MeshRenderer MeshRenderer;
+
         public VulpineGame() : base("Vulpine Test", new Vector2I(800, 600))
         {
 
@@ -88,6 +90,50 @@ namespace VulpineTest
             TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 128);
             TextRenderer.BuildPipeline();
             TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, Vector2.Zero, "N/A") };
+
+            MeshRenderer = new MeshRenderer(Graphics, Content.Get<Texture2D>("Data/tex.png"), "Data/mesh.vert.spv", "Data/mesh.frag.spv", 32, 4);
+            MeshRenderer.BuildPipeline();
+            MeshRenderer.SetMeshInfo(
+                new[] {
+                    MeshRenderer.CreateMeshInfo(
+                        new Mesh(
+                            Graphics,
+                            new Vertex[]
+                            {
+                                new Vertex(-90f, -90f, 0f,  0f, 0f, 1f,     0f, 0f),
+                                new Vertex(90f, -90f, 0f,   0f, 0f, 1f,     1f, 0f),
+                                new Vertex(90f, 90f, 0f,    0f, 0f, 1f,     1f, 1f),
+                                new Vertex(-90f, 90f, 0f,   0f, 0f, 1f,     0f, 1f)
+                            },
+                            new int[] { 0, 1, 2,    2, 3, 0 }
+                        ),
+                        new Sprite(new Vector2(0f, 0f), new Vector2(64f, 64f)),
+                        new Vector3(400f, 300f, 0f),
+                        Vector3.One,
+                        Matrix4.CreateRotationZ(0f),
+                        Vector3.Zero
+                    ),
+                    MeshRenderer.CreateMeshInfo(
+                        new Mesh(
+                            Graphics,
+                            new Vertex[]
+                            {
+                                new Vertex(-180f, -90f, 0f,  0f, 0f, 1f,     0f, 0f),
+                                new Vertex(0f, -90f, 0f,   0f, 0f, 1f,     1f, 0f),
+                                new Vertex(180f, 90f, 0f,    0f, 0f, 1f,     1f, 1f),
+                                new Vertex(0f, 90f, 0f,   0f, 0f, 1f,     0f, 1f)
+                            },
+                            new int[] { 0, 1, 2,    2, 3, 0 }
+                        ),
+                        new Sprite(new Vector2(0f, 0f), new Vector2(64f, 64f)),
+                        new Vector3(580f, 300f, 0f),
+                        Vector3.One,
+                        Matrix4.CreateRotationZ(0f),
+                        Vector3.Zero
+                    )
+                },
+                2
+            );
         }
 
         protected override void OnResize()
@@ -98,6 +144,7 @@ namespace VulpineTest
 
             Pipeline.Build();
             TextRenderer.BuildPipeline();
+            MeshRenderer.BuildPipeline();
         }
 
         long Tick;
@@ -126,6 +173,8 @@ namespace VulpineTest
 
             TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f);
 
+            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f);
+
             LastUpdateTick = Tick;
         }
 
@@ -143,6 +192,8 @@ namespace VulpineTest
             cb.End();
             
             TextRenderer.AddImage(image);
+
+            MeshRenderer.AddImage(image);
         }
 
         protected override void OnDeleteSwapchainImage(VKImage image)
@@ -157,6 +208,8 @@ namespace VulpineTest
             }
             
             TextRenderer.RemoveImage(image);
+
+            MeshRenderer.RemoveImage(image);
         }
 
         protected override void OnDrawToSwapchainImage(VKImage image)
@@ -166,6 +219,8 @@ namespace VulpineTest
             CommandBuffer[image].Submit(false);
 
             TextRenderer.Draw(image, Tick);
+
+            MeshRenderer.Draw(image, Tick);
         }
 
         protected override void OnKeyDown(System.Windows.Forms.KeyEventArgs key)

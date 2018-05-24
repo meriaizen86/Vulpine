@@ -8,18 +8,22 @@ using VulkanCore;
 
 namespace Vulpine
 {
-    public class Primitive : EasyDisposable
+    public class Mesh : EasyDisposable
     {
+        static int NextID = 0;
+
         internal VKBuffer Vertices;
         internal VKBuffer Indices;
+        internal int ID { get; private set; }
 
-        internal Primitive(Context ctx, Vertex[] vertices, int[] indices)
+        internal Mesh(Context ctx, Vertex[] vertices, int[] indices)
         {
+            ID = NextID++;
             Vertices = ToDispose(VKBuffer.Vertex(ctx, vertices));
             Indices = ToDispose(VKBuffer.Index(ctx, indices));
         }
 
-        public Primitive(Graphics g, Vertex[] vertices, int[] indices)
+        public Mesh(Graphics g, Vertex[] vertices, int[] indices)
         {
             Vertices = ToDispose(VKBuffer.Vertex(g.Context, vertices));
             Indices = ToDispose(VKBuffer.Index(g.Context, indices));

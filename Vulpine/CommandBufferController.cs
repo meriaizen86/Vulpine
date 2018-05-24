@@ -113,18 +113,18 @@ namespace Vulpine
             CommandBuffer.CmdEndRenderPass();
         }
 
-        public void Draw(Primitive prim, int instances = 1, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
+        public void Draw(Mesh mesh, int instances = 1, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
         {
-            CommandBuffer.CmdBindVertexBuffer(prim.Vertices);
-            CommandBuffer.CmdBindIndexBuffer(prim.Indices);
-            CommandBuffer.CmdDrawIndexed(prim.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
+            CommandBuffer.CmdBindVertexBuffers(0, 1, new[] { mesh.Vertices.Buffer }, new[] { 0L });
+            CommandBuffer.CmdBindIndexBuffer(mesh.Indices);
+            CommandBuffer.CmdDrawIndexed(mesh.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
         }
 
-        public void Draw(Primitive prim, VKBuffer instanceInfo, int instances, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
+        public void Draw(Mesh mesh, VKBuffer instanceInfo, int instances, int firstIndex = 0, int firstVertex = 0, int firstInstance = 0)
         {
-            CommandBuffer.CmdBindVertexBuffers(0, 2, new[] { prim.Vertices.Buffer, instanceInfo.Buffer }, new[] { 0L, 0L });
-            CommandBuffer.CmdBindIndexBuffer(prim.Indices);
-            CommandBuffer.CmdDrawIndexed(prim.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
+            CommandBuffer.CmdBindVertexBuffers(0, 2, new[] { mesh.Vertices.Buffer, instanceInfo.Buffer }, new[] { 0L, 0L });
+            CommandBuffer.CmdBindIndexBuffer(mesh.Indices);
+            CommandBuffer.CmdDrawIndexed(mesh.Indices.Count, instances, firstIndex, firstVertex, firstInstance);
         }
 
         public void Clear(System.Drawing.Color color)

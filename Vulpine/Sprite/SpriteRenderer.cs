@@ -22,7 +22,7 @@ namespace Vulpine.Sprite
 
             public override string ToString()
             {
-                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Scale={Scale} Center={Center}]";
+                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Center={Center}]";
             }
         }
 

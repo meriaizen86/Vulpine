@@ -271,12 +271,14 @@ namespace Vulpine
             Memory.Unmap();
         }
 
-        public void Write<T>(T[] values) where T : struct
+        public void Write<T>(T[] values, long pos = 0) where T : struct
         {
+            var size = Interop.SizeOf<T>();
+            var count = values.Length;
             if (WriteUsingStagingBuffer)
             {
                 MemoryRequirements stagingReq = StagingBuffer.GetMemoryRequirements();
-                IntPtr vertexPtr = StagingMemory.Map(0, stagingReq.Size);
+                IntPtr vertexPtr = StagingMemory.Map(pos * size, Math.Min(count * size, stagingReq.Size - pos * size));
                 Interop.Write(vertexPtr, values);
                 StagingMemory.Unmap();
 
@@ -294,7 +296,8 @@ namespace Vulpine
                 return;
             }
 
-            IntPtr ptr = Memory.Map(0, Interop.SizeOf<T>() * values.Length);
+           
+            IntPtr ptr = Memory.Map(pos * size, count * size);
             Interop.Write(ptr, values);
             Memory.Unmap();
         }
