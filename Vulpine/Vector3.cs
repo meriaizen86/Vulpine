@@ -63,6 +63,15 @@ namespace Vulpine
             return X * other.X + Y * other.Y + Z * other.Z;
         }
 
+        public Vector3 Cross(Vector3 other)
+        {
+            return new Vector3(
+                Y * other.Z - Z * other.Y,
+                X * other.Z - Z * other.X,
+                X * other.Y - Y * other.X
+            );
+        }
+
         public static Vector3 operator +(Vector3 a, Vector3 b)
         {
             return new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);

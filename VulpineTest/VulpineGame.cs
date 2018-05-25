@@ -96,17 +96,14 @@ namespace VulpineTest
             MeshRenderer.SetMeshInfo(
                 new[] {
                     MeshRenderer.CreateMeshInfo(
-                        new Mesh(
-                            Graphics,
-                            new Vertex[]
-                            {
-                                new Vertex(-90f, -90f, 0f,  0f, 0f, 1f,     0f, 0f),
-                                new Vertex(90f, -90f, 0f,   0f, 0f, 1f,     1f, 0f),
-                                new Vertex(90f, 90f, 0f,    0f, 0f, 1f,     1f, 1f),
-                                new Vertex(-90f, 90f, 0f,   0f, 0f, 1f,     0f, 1f)
-                            },
-                            new int[] { 0, 1, 2,    2, 3, 0 }
-                        ),
+                        Mesh.FromPolygon(Graphics, new[]
+                        {
+                            new Vertex(-180f, -90f, 0f,     0f, 0f, 1f,     0f, 0f),
+                            new Vertex(0f, -180f, 0f,     0f, 0f, 1f,     0.5f, 0f),
+                            new Vertex(180f, 0f, 0f,     0f, 0f, 1f,     1f, 0.2f),
+                            new Vertex(0f, 120f, 0f,     0f, 0f, 1f,     0f, 1f),
+                            new Vertex(-180f, 90f, 0f,     0f, 0f, 1f,     0.1f, 1f)
+                        }),
                         new Sprite(new Vector2(0f, 0f), new Vector2(64f, 64f)),
                         new Vector3(400f, 300f, 0f),
                         Vector3.One,

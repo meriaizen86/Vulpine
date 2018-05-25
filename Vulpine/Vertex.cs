@@ -30,5 +30,10 @@ namespace Vulpine
             Normal = new Vector3(nx, ny, nz);
             TexCoord = new Vector2(u, v);
         }
+
+        public override string ToString()
+        {
+            return $"[Vertex: Position={Position}, Normal={Normal}, TexCoord={TexCoord}]";
+        }
     }
 }
