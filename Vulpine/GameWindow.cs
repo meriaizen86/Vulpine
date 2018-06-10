@@ -173,6 +173,11 @@ namespace Vulpine
                 OnMouseUp(e);
             };
 
+            Form.MouseWheel += (sender, e) =>
+            {
+                OnMouseWheelScrolled(e);
+            };
+
             Context = ToDispose(new Context(this));
 
             OnInit();
@@ -312,6 +317,11 @@ namespace Vulpine
         protected virtual void OnMouseUp(MouseEventArgs e)
         {
             
+        }
+
+        protected virtual void OnMouseWheelScrolled(MouseEventArgs e)
+        {
+
         }
     }
 }
