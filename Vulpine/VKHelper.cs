@@ -309,6 +309,12 @@ namespace Vulpine
                     offset += 8;
                     loci++;
                 }
+                else if (ftype == typeof(Color4))
+                {
+                    vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32G32B32A32SFloat, offset));
+                    offset += 16;
+                    loci++;
+                }
                 else if (ftype == typeof(float))
                 {
                     vertexAttributes.Add(new VertexInputAttributeDescription(loci, 0, Format.R32SFloat, offset));
@@ -352,6 +358,12 @@ namespace Vulpine
                         vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32SFloat, offset));
                         loci++;
                         offset += 8;
+                    }
+                    else if (ftype == typeof(Color4))
+                    {
+                        vertexAttributes.Add(new VertexInputAttributeDescription(loci, 1, Format.R32G32B32A32SFloat, offset));
+                        loci++;
+                        offset += 16;
                     }
                     else if (ftype == typeof(float))
                     {

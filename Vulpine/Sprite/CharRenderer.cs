@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 
 namespace Vulpine.Sprite
 {
-    public class SpriteRenderer : IDisposable
+    internal class CharRenderer : IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
-        public struct SpriteInfo
+        public struct CharInfo
         {
             public Vector2 Translation;
             public Vector2 Scale;
@@ -20,14 +20,17 @@ namespace Vulpine.Sprite
             public Vector2 TextureRightBottom;
             public Vector2 Center;
             public Color4 Color;
+            public float OutlineSize;
+            public Color4 OutlineColor;
+            public Vector2 OutlineOffset;
 
             public override string ToString()
             {
-                return $"[SpriteInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Center={Center} Color={Color}]";
+                return $"[CharInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Center={Center} Color={Color} OutlineSize={OutlineSize} OutlineColor={OutlineColor} OutlineOffset={OutlineOffset}]";
             }
         }
 
-        public int MaxSprites { get; private set; }
+        public int MaxChars { get; private set; }
         Graphics Graphics;
         Texture2D Texture;
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
@@ -51,12 +54,12 @@ namespace Vulpine.Sprite
             }
         }
 
-        public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
+        public CharRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxChars = 1024)
         {
-            MaxSprites = maxSprites;
+            MaxChars = maxChars;
             Graphics = g;
             Texture = tex;
-            Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
+            Instances = VKBuffer.InstanceInfo<CharInfo>(g, MaxChars);
             UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
 
@@ -66,7 +69,7 @@ namespace Vulpine.Sprite
             Pipeline.DepthWrite = false;
             Pipeline.BlendMode = BlendMode.AlphaPremultiplied;
             Pipeline.Instancing = true;
-            Pipeline.InstanceInfoType = typeof(SpriteInfo);
+            Pipeline.InstanceInfoType = typeof(CharInfo);
             Pipeline.Shaders = new[] { vertexShader, fragmentShader };
             Pipeline.DescriptorItems = new[] {
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UProjection),
@@ -91,10 +94,10 @@ namespace Vulpine.Sprite
             CBuffer.Remove(image);
         }
 
-        public void SetSpriteInfo(SpriteInfo[] sprites, int count)
+        public void SetCharInfo(CharInfo[] chars, int count)
         {
             Count = count;
-            Instances.Write(sprites);
+            Instances.Write(chars);
         }
 
         public void Draw(VKImage image, float tick)
@@ -121,11 +124,12 @@ namespace Vulpine.Sprite
             UProjection?.Dispose();
         }
 
-        public SpriteInfo CreateSpriteInfo(
-            Sprite sprite, Vector2 translation, Vector2 scale, Matrix4 rotation, Vector2 velocity, Color4 color
+        public CharInfo CreateCharInfo(
+            Sprite sprite, Vector2 translation, Vector2 scale, Matrix4 rotation, Vector2 velocity, Color4 color,
+            int outlineSize, Color4 outlineColor, Vector2 outlineOffset
         )
         {
-            return new SpriteInfo
+            return new CharInfo
             {
                 Translation = translation,
                 TextureLeftTop = sprite.LeftTop / Texture.SizeF,
@@ -134,7 +138,10 @@ namespace Vulpine.Sprite
                 Scale = sprite.Size * scale,
                 Rotation = rotation,
                 Velocity = velocity,
-                Color = color
+                Color = color,
+                OutlineSize = outlineSize,
+                OutlineColor = outlineColor,
+                OutlineOffset = outlineOffset
             };
         }
     }

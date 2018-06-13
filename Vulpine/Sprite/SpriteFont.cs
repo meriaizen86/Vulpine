@@ -9,6 +9,12 @@ namespace Vulpine.Sprite
 {
     public class SpriteFont
     {
+        static Brush WhiteBrush;
+        static SpriteFont()
+        {
+            WhiteBrush = new SolidBrush(Color.White);
+        }
+
         public Texture2D Texture { get; private set; }
         public Dictionary<char, SpriteFontChar> Sprites { get; private set; }
         public float VerticalSeparation { get; private set; }
@@ -63,14 +69,15 @@ namespace Vulpine.Sprite
             return font;
         }
 
-        public static SpriteFont FromFont(Graphics g, Font font, float lineSep, bool antiAliased, char start, char end, Color color = default(Color))
+        public static SpriteFont FromFont(Graphics g, Font font, float lineSep, bool antiAliased, char start, char end, int maxOutline = 1)
         {
+            var center = new Vector2(maxOutline, maxOutline);
+            maxOutline *= 2;
             var stringFormat = new StringFormat(StringFormat.GenericTypographic);
             stringFormat.FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoClip;
             stringFormat.Trimming = StringTrimming.None;
-            var brush = new SolidBrush(color);
             var sprites = new Dictionary<char, SpriteFontChar>();
-            var textureDimension = 1 << (int)Math.Ceiling(Math.Log(Math.Sqrt(end - start) * (font.Size + 1f), 2));
+            var textureDimension = 1 << (int)Math.Ceiling(Math.Log(Math.Sqrt(end - start) * (font.Size + 1f + (float)maxOutline), 2));
             var x = 0f;
             var y = 0f;
             using (var bmp = new Bitmap(textureDimension, textureDimension))
@@ -83,15 +90,15 @@ namespace Vulpine.Sprite
                     {
                         var str = new string(i, 1);
                         var size = gfx.MeasureString(str, font, (int)font.Size, stringFormat);
-                        sprites.Add(i, new SpriteFontChar { Sprite = new Sprite(new Vector2(x, y), new Vector2(x + size.Width, y + size.Height)), SeparationToNext = size.Width });
+                        sprites.Add(i, new SpriteFontChar { Sprite = new Sprite(new Vector2(x - maxOutline / 2, y - maxOutline / 2), new Vector2(x + size.Width + maxOutline / 2, y + size.Height + maxOutline / 2), center), SeparationToNext = size.Width });
                         
-                        gfx.DrawString(str, font, brush, x, y, stringFormat);
+                        gfx.DrawString(str, font, WhiteBrush, x, y, stringFormat);
 
-                        x += size.Width + 1f;
-                        if (x + size.Width + 1f > textureDimension)
+                        x += size.Width + 1f + (float)maxOutline;
+                        if (x + size.Width + 1f + (float)maxOutline > textureDimension)
                         {
                             x = 0f;
-                            y += size.Height + 1f;
+                            y += size.Height + 1f + (float)maxOutline;
                         }
                     }
 
@@ -109,11 +116,11 @@ namespace Vulpine.Sprite
             }
         }
 
-        public static SpriteFont FromFont(Graphics g, string fontName, FontStyle style, float size, float lineSep, bool antiAliased, char start, char end, Color color = default(Color))
+        public static SpriteFont FromFont(Graphics g, string fontName, FontStyle style, float size, float lineSep, bool antiAliased, char start, char end, int maxOutline = 1)
         {
             using (var font = new Font(fontName, size, style, GraphicsUnit.Pixel))
             {
-                return FromFont(g, font, lineSep, antiAliased, start, end, color);
+                return FromFont(g, font, lineSep, antiAliased, start, end, maxOutline);
             }
         }
     }

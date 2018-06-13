@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Vulpine
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
         public static Vector3 Zero = new Vector3(0f, 0f, 0f);

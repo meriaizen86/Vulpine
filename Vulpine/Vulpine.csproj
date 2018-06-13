@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Angle.cs" />
     <Compile Include="BlendMode.cs" />
+    <Compile Include="Color4.cs" />
     <Compile Include="CommandBufferController.cs" />
     <Compile Include="DescriptorItem.cs" />
     <Compile Include="Extensions.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="PrimitiveRenderMode.cs" />
     <Compile Include="PrimitiveType.cs" />
     <Compile Include="MeshRenderer.cs" />
+    <Compile Include="Sprite\CharRenderer.cs" />
     <Compile Include="Sprite\SpriteFontChar.cs" />
     <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Sprite\Sprite.cs" />

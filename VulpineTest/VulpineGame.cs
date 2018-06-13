@@ -86,10 +86,10 @@ namespace VulpineTest
                 Graphics, Content.Get<Texture2D>("Data/ascii.png"), new Vector2(10f, 18f), Vector2.Zero, new Vector2(16f, 16f), 256 / 16,
                 " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             );*/
-            var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127, Color.DarkBlue);
-            TextRenderer = new TextRenderer(Graphics, font, "Data/sprite.vert.spv", "Data/sprite.frag.spv", 128);
+            var font = SpriteFont.FromFont(Graphics, "Arial", FontStyle.Regular, 20.0f, 20f, true, '\n', (char)127, 16);
+            TextRenderer = new TextRenderer(Graphics, font, "Data/text.vert.spv", "Data/text.frag.spv", 128);
             TextRenderer.BuildPipeline();
-            TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, Vector2.Zero, "N/A") };
+            TextInstances = new[] { new TextRenderer.TextInstance(Vector2.Zero, Vector2.One, Color4.LightGray, 1, new Color4(0f, 0f, 0f, 1f), new Vector2(0f, 0f), Vector2.Zero, "N/A") };
 
             MeshRenderer = new MeshRenderer(Graphics, Content.Get<Texture2D>("Data/tex.png"), "Data/mesh.vert.spv", "Data/mesh.frag.spv", 32, 4);
             MeshRenderer.BuildPipeline();
