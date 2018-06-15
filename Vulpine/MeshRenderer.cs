@@ -48,7 +48,7 @@ namespace Vulpine
 
         public Matrix4 Projection = Matrix4.Identity;
 
-        BlendMode BlendMode
+        public BlendMode BlendMode
         {
             get
             {
@@ -57,6 +57,30 @@ namespace Vulpine
             set
             {
                 Pipeline.BlendMode = value;
+            }
+        }
+
+        public Vector2 ViewportPos
+        {
+            get
+            {
+                return Pipeline.ViewportPos;
+            }
+            set
+            {
+                Pipeline.ViewportPos = value;
+            }
+        }
+
+        public Vector2 ViewportSize
+        {
+            get
+            {
+                return Pipeline.ViewportSize;
+            }
+            set
+            {
+                Pipeline.ViewportSize = value;
             }
         }
 
@@ -190,6 +214,7 @@ namespace Vulpine
             Pipeline?.Dispose();
             Instances?.DisposeRange();
             UProjection?.Dispose();
+            UTime?.Dispose();
         }
 
         public MeshInfo CreateMeshInfo(Mesh mesh, Sprite.Sprite sprite, Vector3 translation, Vector3 scale, Matrix4 rotation, Vector3 velocity)

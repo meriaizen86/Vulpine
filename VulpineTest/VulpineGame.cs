@@ -24,7 +24,8 @@ namespace VulpineTest
             public Vector3 Position;
         }
 
-        const int BatchSize = 1000000;
+        const int Billboards = 1000;
+        const int ParticlesPerAPress = 10000;
 
         PipelineController Pipeline;
         VKBuffer Instances;
@@ -47,7 +48,10 @@ namespace VulpineTest
 
         MeshRenderer MeshRenderer;
 
-        public VulpineGame() : base("Vulpine Test", new Vector2I(800, 600))
+        ParticleRenderer ParticleRenderer;
+        int ParticleCount;
+
+        public VulpineGame() : base("Vulpine Test", new Vector2I(1440, 900))
         {
 
         }
@@ -57,14 +61,14 @@ namespace VulpineTest
         {
             base.OnInit();
 
-            Positions = new Vector3[BatchSize];
+            Positions = new Vector3[Billboards];
             var rand = new Random();
-            for (var i = 0; i < BatchSize; i++)
+            for (var i = 0; i < Billboards; i++)
             {
                 Positions[i] = new Vector3(-200f + (float)rand.NextDouble() * 400f, -200f + (float)rand.NextDouble() * 400f, 0f);
             }
 
-            Instances = VKBuffer.InstanceInfo<InstanceInfo>(Graphics, BatchSize);
+            Instances = VKBuffer.InstanceInfo<InstanceInfo>(Graphics, Billboards);
             Instances.Write(Positions);
             BViewProjection = VKBuffer.UniformBuffer<ViewProjection>(Graphics, 1);
             Tex = Content.Get<Texture2D>("Data/tex.png");
@@ -131,17 +135,25 @@ namespace VulpineTest
                 },
                 2
             );
+
+            ParticleRenderer = new ParticleRenderer(
+                Graphics, Content.Get<Texture2D>("Data/fire.png"),
+                new Sprite(Vector2.Zero, new Vector2(64f, 64f), new Vector2(64f, 64f)),
+                "Data/particle.vert.spv", "Data/particle.frag.spv", 900000
+            );
+            ParticleRenderer.BlendMode = BlendMode.Add;
+            ParticleRenderer.BuildPipeline();
         }
 
         protected override void OnResize()
         {
             base.OnResize();
 
-            Graphics.ViewportSize = Size;
-
+            Pipeline.ViewportSize = (Vector2)Size;
             Pipeline.Build();
             TextRenderer.BuildPipeline();
             MeshRenderer.BuildPipeline();
+            ParticleRenderer.BuildPipeline();
         }
 
         long Tick;
@@ -156,7 +168,8 @@ namespace VulpineTest
                 TextInstances[0].Text =
                     $"FPS: {ActualFPS:#.##}\n" +
                     $"UPS: {ActualUPS:#.##}\n" +
-                    $"Billboards: {BatchSize}\n" + 
+                    $"Billboards: {Billboards}\n" +
+                    $"Particles: {ParticleCount}\n" +
                     $"Mouse: {(MouseState ? "Down" : "Up")}\n" +
                     $"Mouse position: {MousePositionWindow}";
                 TextRenderer.SetTextInstances(TextInstances, 1);
@@ -168,9 +181,11 @@ namespace VulpineTest
             VP.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.ToRad(80f), (float)Width / (float)Height, 0.1f, 1000f);
             BViewProjection.Write(ref VP);
 
-            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f);
+            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
 
-            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Graphics.ViewportSize, 0f, 1f);
+            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
+
+            ParticleRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
 
             LastUpdateTick = Tick;
         }
@@ -184,13 +199,15 @@ namespace VulpineTest
             cb.Begin();
             cb.Clear(Color.CornflowerBlue);
             cb.BeginPass(Pipeline);
-            cb.Draw(Graphics.Square, Instances, BatchSize);
+            cb.Draw(Graphics.Square, Instances, Billboards);
             cb.EndPass();
             cb.End();
             
             TextRenderer.AddImage(image);
 
             MeshRenderer.AddImage(image);
+
+            ParticleRenderer.AddImage(image);
         }
 
         protected override void OnDeleteSwapchainImage(VKImage image)
@@ -207,6 +224,8 @@ namespace VulpineTest
             TextRenderer.RemoveImage(image);
 
             MeshRenderer.RemoveImage(image);
+
+            ParticleRenderer.RemoveImage(image);
         }
 
         protected override void OnDrawToSwapchainImage(VKImage image)
@@ -215,21 +234,34 @@ namespace VulpineTest
 
             CommandBuffer[image].Submit(false);
 
-            TextRenderer.Draw(image, Tick);
-
             MeshRenderer.Draw(image, Tick);
+
+            ParticleRenderer.Draw(image, Tick);
+
+            TextRenderer.Draw(image, Tick);
         }
 
         protected override void OnKeyDown(System.Windows.Forms.KeyEventArgs key)
         {
             base.OnKeyDown(key);
 
-            Console.WriteLine(key.KeyCode.ToString());
-
             switch (key.KeyCode)
             {
                 case System.Windows.Forms.Keys.Escape:
                     Close();
+                    break;
+                case System.Windows.Forms.Keys.A:
+                    ParticleCount += ParticlesPerAPress;
+                    var partRand = new Random((int)DateTime.Now.Ticks);
+                    var newParticles = new ParticleRenderer.ParticleInfo[ParticlesPerAPress];
+                    for (var i = 0; i < ParticlesPerAPress; i++)
+                        newParticles[i] = ParticleRenderer.CreateParticleInfo(
+                            new Vector2(Width / 2f, Height / 2f), Vector2.One,
+                            Matrix4.CreateRotationZ((float)partRand.NextDouble() * 360f),
+                            new Vector2(-1f + (float)partRand.NextDouble() * 2f, -1f + (float)partRand.NextDouble() * 2f),
+                            Color4.White, Tick
+                        );
+                    ParticleRenderer.CreateParticles(newParticles, ParticlesPerAPress);
                     break;
             }
         }

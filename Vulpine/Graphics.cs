@@ -13,8 +13,6 @@ namespace Vulpine
         static ImageSubresourceRange DefaultSubresourceRange = new ImageSubresourceRange(ImageAspects.Color, 0, 1, 0, 1);
 
         internal Context Context;
-        public Vector2I ViewportPosition;
-        public Vector2I ViewportSize;
         public int Samples = 1;
 
         public Mesh Square { get; private set; }

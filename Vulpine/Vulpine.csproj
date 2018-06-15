@@ -72,6 +72,7 @@
     <Compile Include="PrimitiveType.cs" />
     <Compile Include="MeshRenderer.cs" />
     <Compile Include="Sprite\CharRenderer.cs" />
+    <Compile Include="Sprite\ParticleRenderer.cs" />
     <Compile Include="Sprite\SpriteFontChar.cs" />
     <Compile Include="Sprite\SpriteRenderer.cs" />
     <Compile Include="Sprite\Sprite.cs" />

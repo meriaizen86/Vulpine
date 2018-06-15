@@ -18,6 +18,10 @@ namespace Vulpine
             Factor.One, Factor.OneMinusSrcAlpha, Op.Add,
             Factor.SrcAlpha, Factor.OneMinusSrcAlpha, Op.Add
         );
+        public static BlendMode Add = new BlendMode(
+            Factor.One, Factor.One, Op.Add,
+            Factor.SrcAlpha, Factor.OneMinusSrcAlpha, Op.Add
+        );
 
         public enum Factor
         {

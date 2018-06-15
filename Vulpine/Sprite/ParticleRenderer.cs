@@ -7,38 +7,43 @@ using System.Runtime.InteropServices;
 
 namespace Vulpine.Sprite
 {
-    internal class CharRenderer : IDisposable
+    public class ParticleRenderer : IDisposable
     {
         [StructLayout(LayoutKind.Sequential)]
-        public struct CharInfo
+        public struct ParticleInfo
         {
             public Vector2 Translation;
             public Vector2 Scale;
             public Matrix4 Rotation;
             public Vector2 Velocity;
-            public Vector2 TextureLeftTop;
-            public Vector2 TextureRightBottom;
-            public Vector2 Center;
-            public Color4 Color;
-            public float OutlineSize;
-            public Color4 OutlineColor;
-            public Vector2 OutlineOffset;
+            public float BirthTick;
 
             public override string ToString()
             {
-                return $"[CharInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom} Center={Center} Color={Color} OutlineSize={OutlineSize} OutlineColor={OutlineColor} OutlineOffset={OutlineOffset}]";
+                return $"[ParticleInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} BirthTick={BirthTick}]";
             }
         }
 
-        public int MaxChars { get; private set; }
+        struct SpriteCoords
+        {
+            internal Vector2 LeftTop;
+            internal Vector2 RightBottom;
+            internal Vector2 Center;
+        }
+
+        public int MaxParticles { get; private set; }
         Graphics Graphics;
         Texture2D Texture;
+        Sprite Sprite;
         Dictionary<VKImage, CommandBufferController> CBuffer = new Dictionary<VKImage, CommandBufferController>();
         PipelineController Pipeline;
         VKBuffer Instances;
         VKBuffer UProjection;
         VKBuffer UTime;
+        VKBuffer USpriteCoords;
+        VKBuffer UColor;
         int Count;
+        int NextWritePos;
 
         public Matrix4 Projection = Matrix4.Identity;
 
@@ -78,14 +83,40 @@ namespace Vulpine.Sprite
             }
         }
 
-        public CharRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxChars = 1024)
+        Color4 _Color;
+        public Color4 Color
         {
-            MaxChars = maxChars;
+            get
+            {
+                return _Color;
+            }
+            set
+            {
+                _Color = value;
+                UColor.Write(ref _Color);
+            }
+        }
+
+        public ParticleRenderer(Graphics g, Texture2D tex, Sprite sprite, string vertexShader, string fragmentShader, int maxParticles = 1024)
+        {
+            MaxParticles = maxParticles;
             Graphics = g;
             Texture = tex;
-            Instances = VKBuffer.InstanceInfo<CharInfo>(g, MaxChars);
+            Sprite = sprite;
+            Instances = VKBuffer.InstanceInfo<ParticleInfo>(g, maxParticles);
             UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
+            USpriteCoords = VKBuffer.UniformBuffer<SpriteCoords>(g, 1);
+            UColor = VKBuffer.UniformBuffer<Color4>(g, 1);
+            var spriteCoords = new SpriteCoords
+            {
+                LeftTop = sprite.LeftTop / Texture.SizeF,
+                RightBottom = sprite.RightBottom / Texture.SizeF,
+                Center = sprite.TextureCenter
+            };
+            USpriteCoords.Write(ref spriteCoords);
+            var color = Color4.White;
+            UColor.Write(ref color);
 
             Pipeline = new PipelineController(Graphics);
             Pipeline.ClearDepthOnBeginPass = true;
@@ -93,11 +124,13 @@ namespace Vulpine.Sprite
             Pipeline.DepthWrite = false;
             Pipeline.BlendMode = BlendMode.AlphaPremultiplied;
             Pipeline.Instancing = true;
-            Pipeline.InstanceInfoType = typeof(CharInfo);
+            Pipeline.InstanceInfoType = typeof(ParticleInfo);
             Pipeline.Shaders = new[] { vertexShader, fragmentShader };
             Pipeline.DescriptorItems = new[] {
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UProjection),
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, UTime),
+                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, USpriteCoords),
+                DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Fragment, UColor),
                 DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
         }
@@ -118,14 +151,28 @@ namespace Vulpine.Sprite
             CBuffer.Remove(image);
         }
 
-        public void SetCharInfo(CharInfo[] chars, int count)
+        public void CreateParticles(ParticleInfo[] particles, int count)
         {
-            Count = count;
-            Instances.Write(chars);
+            if (NextWritePos + count >= MaxParticles)
+            {
+                var a1 = particles.Take(MaxParticles - NextWritePos).ToArray();
+                var a2 = particles.Skip(MaxParticles - NextWritePos).ToArray();
+                CreateParticles(a1, a1.Length);
+                CreateParticles(a2, count - a1.Length);
+            }
+            else
+            {
+                Instances.Write(particles, NextWritePos);
+                Count = Math.Min(Count + count, MaxParticles);
+                NextWritePos = (NextWritePos + count) % MaxParticles;
+            }
         }
 
         public void Draw(VKImage image, float tick)
         {
+            if (Count == 0)
+                return;
+
             UProjection.Write(ref Projection);
             UTime.Write(ref tick);
 
@@ -147,26 +194,21 @@ namespace Vulpine.Sprite
             Instances?.Dispose();
             UProjection?.Dispose();
             UTime?.Dispose();
+            USpriteCoords?.Dispose();
+            UColor?.Dispose();
         }
 
-        public CharInfo CreateCharInfo(
-            Sprite sprite, Vector2 translation, Vector2 scale, Matrix4 rotation, Vector2 velocity, Color4 color,
-            int outlineSize, Color4 outlineColor, Vector2 outlineOffset
+        public ParticleInfo CreateParticleInfo(
+            Vector2 translation, Vector2 scale, Matrix4 rotation, Vector2 velocity, Color4 color, float tick
         )
         {
-            return new CharInfo
+            return new ParticleInfo
             {
                 Translation = translation,
-                TextureLeftTop = sprite.LeftTop / Texture.SizeF,
-                TextureRightBottom = sprite.RightBottom / Texture.SizeF,
-                Center = sprite.TextureCenter,
-                Scale = sprite.Size * scale,
+                Scale = Sprite.Size * scale,
                 Rotation = rotation,
                 Velocity = velocity,
-                Color = color,
-                OutlineSize = outlineSize,
-                OutlineColor = outlineColor,
-                OutlineOffset = outlineOffset
+                BirthTick = tick
             };
         }
     }

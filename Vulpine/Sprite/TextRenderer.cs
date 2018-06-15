@@ -88,6 +88,42 @@ namespace Vulpine.Sprite
             }
         }
 
+        public BlendMode BlendMode
+        {
+            get
+            {
+                return CharRenderer.BlendMode;
+            }
+            set
+            {
+                CharRenderer.BlendMode = value;
+            }
+        }
+
+        public Vector2 ViewportPos
+        {
+            get
+            {
+                return CharRenderer.ViewportPos;
+            }
+            set
+            {
+                CharRenderer.ViewportPos = value;
+            }
+        }
+
+        public Vector2 ViewportSize
+        {
+            get
+            {
+                return CharRenderer.ViewportSize;
+            }
+            set
+            {
+                CharRenderer.ViewportSize = value;
+            }
+        }
+
         int MaxTotalChars => CharRenderer.MaxChars;
 
         int Count;

@@ -266,7 +266,7 @@ namespace Vulpine
             return g.Context.Device.CreatePipelineLayout(layoutCreateInfo);
         }
 
-        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode, PrimitiveType primType, PrimitiveRenderMode pmode, PrimitiveCullMode cmode, float lineWidth)
+        public static Pipeline CreateGraphicsPipeline(Graphics g, PipelineLayout pl, RenderPass rp, string[] shaderNames, bool depthTest, bool depthWrite, bool instancing, Type instanceInfoType, BlendMode blendMode, PrimitiveType primType, PrimitiveRenderMode pmode, PrimitiveCullMode cmode, float lineWidth, Vector2 viewportPos, Vector2 viewportSize)
         {
             if (instancing && instanceInfoType == null)
                 throw new NullReferenceException("Instance info type cannot be null");
@@ -404,8 +404,8 @@ namespace Vulpine
             );
             var inputAssemblyStateCreateInfo = new PipelineInputAssemblyStateCreateInfo((PrimitiveTopology)primType);
             var viewportStateCreateInfo = new PipelineViewportStateCreateInfo(
-                new Viewport(g.ViewportPosition.X + g.ViewportSize.X, g.ViewportPosition.Y + g.ViewportSize.Y, -g.ViewportSize.X, -g.ViewportSize.Y),
-                new Rect2D(g.ViewportPosition.X, g.ViewportPosition.Y, g.ViewportSize.X, g.ViewportSize.Y));
+                new Viewport(viewportPos.X + viewportSize.X, viewportPos.Y + viewportSize.Y, -viewportSize.X, -viewportSize.Y),
+                new Rect2D((int)viewportPos.X, (int)viewportPos.Y, (int)viewportSize.X, (int)viewportSize.Y));
             var rasterizationStateCreateInfo = new PipelineRasterizationStateCreateInfo
             {
                 PolygonMode = (PolygonMode)pmode,

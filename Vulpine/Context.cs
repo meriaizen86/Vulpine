@@ -16,7 +16,7 @@ namespace Vulpine
         internal Content Content;
         DebugReportCallbackExt DebugReportCallback;
         internal SurfaceKhr Surface;
-        GameWindow Window;
+        internal GameWindow Window;
         internal Device Device;
         internal PhysicalDevice PhysicalDevice;
         internal PhysicalDeviceMemoryProperties MemoryProperties;
@@ -111,8 +111,6 @@ namespace Vulpine
             ComputeCommandPool = ToDispose(Device.CreateCommandPool(new CommandPoolCreateInfo(ComputeQueueFamilyIndex)));
 
             Graphics = ToDispose(new Graphics(this));
-            Graphics.ViewportPosition = Vector2I.Zero;
-            Graphics.ViewportSize = Window.Size;
 
             Build();
         }
