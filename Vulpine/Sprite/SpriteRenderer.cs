@@ -112,6 +112,7 @@ namespace Vulpine.Sprite
 
         public void RemoveImage(VKImage image)
         {
+            CBuffer[image].Dispose();
             CBuffer.Remove(image);
         }
 

@@ -73,5 +73,13 @@ namespace Vulpine
             DepthStencil?.Dispose();
             Framebuffer?.Keys?.DisposeRange();
         }
+
+        public void DisposeExceptImages()
+        {
+            //GeneralCommandBuffer?.Dispose();
+            View?.Dispose();
+            DepthStencil?.Dispose();
+            Framebuffer?.Values?.DisposeRange();
+        }
     }
 }

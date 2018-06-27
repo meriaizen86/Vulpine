@@ -135,15 +135,22 @@ namespace Vulpine
         {
             if (!Window.Running)
                 return;
+            Swapchain?.Dispose();
+            if (SwapchainImages != null)
+                foreach (var img in SwapchainImages)
+                    img.DisposeExceptImages();
             GraphicsCommandPool?.Reset();
             ComputeCommandPool?.Reset();
-            Pipelines.DisposeRange();
+            Pipelines?.DisposeRange();
 
             base.Dispose();
         }
 
         internal void CacheSwapchainImages()
         {
+            if (SwapchainImages != null)
+                foreach (var img in SwapchainImages)
+                    img.DisposeExceptImages();
             var imgs = Swapchain.GetImages();
             SwapchainImages = new VKImage[imgs.Length];
             for (var i = 0; i < imgs.Length; i++)

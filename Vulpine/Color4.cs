@@ -25,11 +25,11 @@ namespace Vulpine
         public static readonly Color4 TransparentBlack = new Color4(0f, 0f, 0f, 0f);
         public static readonly Color4 TransparentWhite = new Color4(1f, 1f, 1f, 0f);
 
-        float R, G, B, A;
+        public float R, G, B, A;
 
-        float Hue => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetHue();
-        float Saturaiton => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetSaturation();
-        float Value => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetBrightness();
+        public float Hue => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetHue();
+        public float Saturaiton => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetSaturation();
+        public float Value => Color.FromArgb((int)(R * 255f), (int)(G * 255f), (int)(B * 255f), (int)(A * 255f)).GetBrightness();
 
         public Color4(float r, float g, float b, float a = 1f)
         {

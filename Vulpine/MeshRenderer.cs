@@ -128,6 +128,7 @@ namespace Vulpine
 
         public void RemoveImage(VKImage image)
         {
+            CBuffer[image].Dispose();
             CBuffer.Remove(image);
         }
 

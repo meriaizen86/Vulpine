@@ -32,7 +32,7 @@ namespace VulpineTest
         VKBuffer BViewProjection;
         Texture2D Tex;
         ViewProjection VP;
-
+        
         Vector3[] Positions;
         Vector3 CamPos;
         Vector3 CamTarget = new Vector3(0f, 0f, 0f);
@@ -51,9 +51,9 @@ namespace VulpineTest
         ParticleRenderer ParticleRenderer;
         int ParticleCount;
 
-        public VulpineGame() : base("Vulpine Test", new Vector2I(1440, 900))
+        public VulpineGame() : base("Vulpine Test", new Vector2I(1440, 900), true)
         {
-
+            
         }
         
 
@@ -151,8 +151,11 @@ namespace VulpineTest
 
             Pipeline.ViewportSize = (Vector2)Size;
             Pipeline.Build();
+            TextRenderer.ViewportSize = (Vector2)Size;
             TextRenderer.BuildPipeline();
+            MeshRenderer.ViewportSize = (Vector2)Size;
             MeshRenderer.BuildPipeline();
+            ParticleRenderer.ViewportSize = (Vector2)Size;
             ParticleRenderer.BuildPipeline();
         }
 
@@ -181,11 +184,11 @@ namespace VulpineTest
             VP.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.ToRad(80f), (float)Width / (float)Height, 0.1f, 1000f);
             BViewProjection.Write(ref VP);
 
-            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
+            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
 
-            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
+            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
 
-            ParticleRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, Pipeline.ViewportSize, 0f, 1f);
+            ParticleRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
 
             LastUpdateTick = Tick;
         }

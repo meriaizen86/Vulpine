@@ -334,6 +334,7 @@ namespace Vulpine
             Memory.Unmap();
         }
 
+        /*
         public void Write<T>(IList<T> values, long pos = 0) where T : struct
         {
             var size = Interop.SizeOf<T>();
@@ -372,6 +373,6 @@ namespace Vulpine
                 Interop.Write(ptr + i * size, ref value);
             }
             Memory.Unmap();
-        }
+        }*/
     }
 }

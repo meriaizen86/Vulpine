@@ -131,12 +131,12 @@ namespace Vulpine
             }
         }
 
-        public GameWindow(string title, Vector2I size)
+        public GameWindow(string title, Vector2I size, bool resizable)
         {
             Form = ToDispose(new Form
             {
                 Text = title,
-                FormBorderStyle = FormBorderStyle.Fixed3D,
+                FormBorderStyle = resizable ? FormBorderStyle.Sizable : FormBorderStyle.Fixed3D,
                 ClientSize = new System.Drawing.Size(size.X, size.Y),
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimumSize = new System.Drawing.Size(200, 200),
@@ -147,7 +147,7 @@ namespace Vulpine
 
             Form.HandleDestroyed += (sender, e) => Running = false;
 
-            Form.Resize += (sender, e) =>
+            Form.ResizeEnd += (sender, e) =>
             {
                 OnResize();
                 AfterResize();

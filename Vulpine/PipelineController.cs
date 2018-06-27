@@ -45,7 +45,7 @@ namespace Vulpine
         {
             DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
-            UsingSamplers?.DisposeRange();
+            //UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
             Pipeline?.Dispose();
 
@@ -61,7 +61,7 @@ namespace Vulpine
         {
             DescriptorSetLayout?.Dispose();
             PipelineLayout?.Dispose();
-            UsingSamplers?.DisposeRange();
+            //UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
             RenderPass?.Dispose();
             Pipeline?.Dispose();
