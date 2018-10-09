@@ -103,6 +103,16 @@ namespace Vulpine
             return new System.Numerics.Vector2(a.X, a.Y);
         }
 
+        public static bool operator ==(Vector2 a, Vector2 b)
+        {
+            return a.X == b.X && a.Y == b.Y;
+        }
+
+        public static bool operator !=(Vector2 a, Vector2 b)
+        {
+            return a.X != b.X || a.Y != b.Y;
+        }
+
         public override string ToString()
         {
             return $"({X}, {Y})";

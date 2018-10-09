@@ -107,7 +107,9 @@ namespace Vulpine.Sprite
 
                 var sfont = new SpriteFont
                 {
-                    Texture = Texture2D.FromBitmap(g.Context, bmp),
+                    Texture = Texture2D.FromBitmap(g, bmp, new Rectangle[] {
+                        new Rectangle(Point.Empty, bmp.Size)
+                    }),
                     Sprites = sprites,
                     VerticalSeparation = lineSep
                 };

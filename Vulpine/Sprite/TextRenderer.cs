@@ -76,6 +76,18 @@ namespace Vulpine.Sprite
         internal CharRenderer CharRenderer;
         public SpriteFont Font { get; private set; }
         
+        public Matrix4 View
+        {
+            get
+            {
+                return CharRenderer.View;
+            }
+            set
+            {
+                CharRenderer.View = value;
+            }
+        }
+
         public Matrix4 Projection
         {
             get
@@ -121,6 +133,54 @@ namespace Vulpine.Sprite
             set
             {
                 CharRenderer.ViewportSize = value;
+            }
+        }
+
+        public bool DepthWrite
+        {
+            get
+            {
+                return CharRenderer.DepthWrite;
+            }
+            set
+            {
+                CharRenderer.DepthWrite = value;
+            }
+        }
+
+        public bool DepthTest
+        {
+            get
+            {
+                return CharRenderer.DepthTest;
+            }
+            set
+            {
+                CharRenderer.DepthTest = value;
+            }
+        }
+
+        public bool ClearDepth
+        {
+            get
+            {
+                return CharRenderer.ClearDepth;
+            }
+            set
+            {
+                CharRenderer.ClearDepth = value;
+            }
+        }
+
+        public string[] Shaders
+        {
+            get
+            {
+                return CharRenderer.Shaders;
+            }
+            set
+            {
+                CharRenderer.Shaders = value;
             }
         }
 

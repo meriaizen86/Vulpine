@@ -22,7 +22,7 @@ namespace Vulpine
 
             public override string ToString()
             {
-                return $"[MeshInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom}]";
+                return $"[MeshRenderInfo Translation={Translation} Scale={Scale} Rotation={Rotation} Velocity={Velocity} TextureLeftTop={TextureLeftTop} TextureTopRight={TextureRightBottom}]";
             }
         }
 
@@ -30,6 +30,11 @@ namespace Vulpine
         {
             public MeshRenderInfo RenderInfo;
             public Mesh Mesh;
+
+            public override string ToString()
+            {
+                return $"[MeshInfo Mesh = {(Mesh != null ? Mesh.ToString() : "null")}]";
+            }
         }
 
         public int MaxInstances { get; private set; }
@@ -46,6 +51,7 @@ namespace Vulpine
         MeshRenderInfo[] InstanceCopyBuffer;
         Mesh[] Meshes;
 
+        public Matrix4 View = Matrix4.Identity;
         public Matrix4 Projection = Matrix4.Identity;
 
         public BlendMode BlendMode
@@ -84,6 +90,74 @@ namespace Vulpine
             }
         }
 
+        public bool DepthWrite
+        {
+            get
+            {
+                return Pipeline.DepthWrite;
+            }
+            set
+            {
+                Pipeline.DepthWrite = value;
+            }
+        }
+
+        public bool DepthTest
+        {
+            get
+            {
+                return Pipeline.DepthTest;
+            }
+            set
+            {
+                Pipeline.DepthTest = value;
+            }
+        }
+
+        public bool ClearDepth
+        {
+            get
+            {
+                return Pipeline.ClearDepthOnBeginPass;
+            }
+            set
+            {
+                Pipeline.ClearDepthOnBeginPass = value;
+            }
+        }
+
+        public string[] Shaders
+        {
+            get
+            {
+                return Pipeline.Shaders;
+            }
+            set
+            {
+                Pipeline.Shaders = value;
+            }
+        }
+
+        bool _Voxels;
+        public bool Voxels
+        {
+            get
+            {
+                return _Voxels;
+            }
+            set
+            {
+                if (value)
+                {
+                    Pipeline.PrimitiveRenderMode = PrimitiveRenderMode.Points;
+                }
+                else
+                {
+                    Pipeline.PrimitiveRenderMode = PrimitiveRenderMode.Fill;
+                }
+            }
+        }
+
         public MeshRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxInstances = 1024, int maxUniqueMeshes = 8)
         {
             MaxInstances = maxInstances;
@@ -97,7 +171,7 @@ namespace Vulpine
                 Instances[i] = VKBuffer.InstanceInfo<MeshRenderInfo>(g, maxInstances);
             TempInstances = new MeshInfo[maxInstances];
             InstanceCopyBuffer = new MeshRenderInfo[maxInstances];
-            UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
+            UProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
 
             Pipeline = new PipelineController(Graphics);
@@ -147,11 +221,19 @@ namespace Vulpine
                     break;
                 case MeshInfoSortMode.SortCopy:
                     instances.CopyTo(TempInstances, 0);
-                    TempInstances.OrderBy(info => info.Mesh.ID);
+                    Array.Sort(TempInstances, (MeshInfo info, MeshInfo otherInfo) => {
+                        return info.Mesh == null ? (otherInfo.Mesh == null ? 0 : 1) :
+                            otherInfo.Mesh == null ? -1 :
+                            info.Mesh.ID.CompareTo(otherInfo.Mesh.ID);
+                    });
                     break;
                 case MeshInfoSortMode.SortOriginal:
                     TempInstances = instances;
-                    TempInstances.OrderBy(info => info.Mesh.ID);
+                    Array.Sort(TempInstances, (MeshInfo info, MeshInfo otherInfo) => {
+                        return info.Mesh == null ? (otherInfo.Mesh == null ? 0 : 1) :
+                            otherInfo.Mesh == null ? -1 :
+                            info.Mesh.ID.CompareTo(otherInfo.Mesh.ID);
+                    });
                     break;
             }
 
@@ -165,7 +247,7 @@ namespace Vulpine
             {
                 var info = TempInstances[i];
 
-                if (info.Mesh != lastMesh)
+                if (lastMesh == null || info.Mesh.ID != lastMesh.ID)
                 {
                     if (lastMesh != null)
                     {
@@ -188,7 +270,8 @@ namespace Vulpine
 
         public void Draw(VKImage image, float tick)
         {
-            UProjection.Write(ref Projection);
+            var vp = new ViewProjection { View = View, Projection = Projection };
+            UProjection.Write(ref vp);
             UTime.Write(ref tick);
 
             var cb = CBuffer[image];

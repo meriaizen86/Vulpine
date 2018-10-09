@@ -18,6 +18,14 @@ namespace Vulpine
         internal Context Context;
         public Graphics Graphics => Context.Graphics;
         public Content Content => Context.Content;
+        public float FrameBufferScale { get; private set; } = 1f;
+        public Vector2I FrameBufferSize
+        {
+            get
+            {
+                return (Vector2I)((Vector2)ClientSize * FrameBufferScale);
+            }
+        }
         public double SecondsPerUpdate = 1.0 / 60.0;
         public double UpdatesPerSecond
         {
@@ -50,14 +58,22 @@ namespace Vulpine
         {
             get
             {
-                return new Vector2I(Form.DesktopLocation.X, Form.DesktopLocation.Y);
+                return new Vector2I(Form.Location.X, Form.Location.Y);
             }
             set
             {
                 Form.SetDesktopLocation(value.X, value.Y);
             }
         }
-        public Vector2I Size
+        public Vector2I ClientPosition
+        {
+            get
+            {
+                var screen = Form.RectangleToScreen(Form.ClientRectangle);
+                return new Vector2I(screen.Left, screen.Top);
+            }
+        }
+        public Vector2I ClientSize
         {
             get
             {
@@ -131,7 +147,7 @@ namespace Vulpine
             }
         }
 
-        public GameWindow(string title, Vector2I size, bool resizable)
+        public GameWindow(string title, Vector2I size, float frameBufferScale, bool resizable)
         {
             Form = ToDispose(new Form
             {
@@ -178,6 +194,8 @@ namespace Vulpine
                 OnMouseWheelScrolled(e);
             };
 
+            FrameBufferScale = frameBufferScale;
+
             Context = ToDispose(new Context(this));
 
             OnInit();
@@ -219,6 +237,7 @@ namespace Vulpine
                 if (elapsed.TotalSeconds > SecondsPerFrame || first)
                 {
                     drawSW.Restart();
+                    OnBeginDraw();
                     Draw();
                     DrawTime = drawSW.Elapsed.TotalSeconds;
                     ActualFPS = 1.0 / elapsed.TotalSeconds;
@@ -271,6 +290,11 @@ namespace Vulpine
         }
 
         protected virtual void OnUpdate(long tick)
+        {
+
+        }
+
+        protected virtual void OnBeginDraw()
         {
 
         }

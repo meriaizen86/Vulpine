@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Drawing;
 
 using Vulpine;
 using Vulpine.Sprite;
+using Vulpine.Utils;
 
 namespace VulpineTest
 {
@@ -24,13 +24,13 @@ namespace VulpineTest
             public Vector3 Position;
         }
 
-        const int Billboards = 1000;
+        const int Billboards = 10000;
         const int ParticlesPerAPress = 10000;
 
         PipelineController Pipeline;
         VKBuffer Instances;
         VKBuffer BViewProjection;
-        Texture2D Tex;
+        Texture2D TestTex;
         ViewProjection VP;
         
         Vector3[] Positions;
@@ -51,7 +51,7 @@ namespace VulpineTest
         ParticleRenderer ParticleRenderer;
         int ParticleCount;
 
-        public VulpineGame() : base("Vulpine Test", new Vector2I(1440, 900), true)
+        public VulpineGame() : base("Vulpine Test", new Vector2I(1440, 900), 1f, true)
         {
             
         }
@@ -60,6 +60,10 @@ namespace VulpineTest
         protected override void OnInit()
         {
             base.OnInit();
+
+            var rot = Matrix4.CreateRotationX(0) * Matrix4.CreateRotationY(0) * Matrix4.CreateRotationZ(90);
+            Console.WriteLine(rot);
+            Console.WriteLine(Matrix4.CreateRotation(new Angle(30f, 45f, 30f)).Rotation);
 
             Positions = new Vector3[Billboards];
             var rand = new Random();
@@ -71,7 +75,16 @@ namespace VulpineTest
             Instances = VKBuffer.InstanceInfo<InstanceInfo>(Graphics, Billboards);
             Instances.Write(Positions);
             BViewProjection = VKBuffer.UniformBuffer<ViewProjection>(Graphics, 1);
-            Tex = Content.Get<Texture2D>("Data/tex.png");
+            var testImg = Content.Get<Image>("Data/tex.png");
+            using (var imgBuilder = new ImageBuilder(testImg))
+            {
+                var data = imgBuilder.GetData();
+                for (var i = 0; i < data.Length; i += 4)
+                    data[i + 2] += 128;
+                imgBuilder.SetData(data);
+                imgBuilder.Finish();
+                TestTex = Texture2D.FromBitmap(Graphics, imgBuilder, new Rectangle[] { new Rectangle(Point.Empty, testImg.Size) });
+            }
 
             Pipeline = new PipelineController(Graphics);
             Pipeline.DepthTest = true;
@@ -82,7 +95,7 @@ namespace VulpineTest
             Pipeline.Shaders = new[] { "Data/billboard.vert.spv", "Data/billboard.frag.spv" };
             Pipeline.DescriptorItems = new[] {
                 DescriptorItem.UniformBuffer(DescriptorItem.ShaderType.Vertex, BViewProjection),
-                DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, Tex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
+                DescriptorItem.CombinedImageSampler(DescriptorItem.ShaderType.Fragment, TestTex, DescriptorItem.SamplerFilter.Nearest, DescriptorItem.SamplerFilter.Nearest)
             };
             Pipeline.Build();
 
@@ -102,11 +115,11 @@ namespace VulpineTest
                     MeshRenderer.CreateMeshInfo(
                         Mesh.FromPolygon(Graphics, new[]
                         {
-                            new Vertex(-180f, -90f, 0f,     0f, 0f, 1f,     0f, 0f),
-                            new Vertex(0f, -180f, 0f,     0f, 0f, 1f,     0.5f, 0f),
-                            new Vertex(180f, 0f, 0f,     0f, 0f, 1f,     1f, 0.2f),
-                            new Vertex(0f, 120f, 0f,     0f, 0f, 1f,     0f, 1f),
-                            new Vertex(-180f, 90f, 0f,     0f, 0f, 1f,     0.1f, 1f)
+                            new Vertex(new Vector3(-180f, -90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0f, 0f), Color4.White),
+                            new Vertex(new Vector3(0f, -180f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0.5f, 0f), Color4.White),
+                            new Vertex(new Vector3(180f, 0f, 0f), new Vector3(0f, 0f, 1f), new Vector2(1f, 0.2f), Color4.White),
+                            new Vertex(new Vector3(0f, 120f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0f, 1f), Color4.White),
+                            new Vertex(new Vector3(-180f, 90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0.1f, 1f), Color4.White)
                         }),
                         new Sprite(new Vector2(0f, 0f), new Vector2(64f, 64f)),
                         new Vector3(400f, 300f, 0f),
@@ -119,10 +132,10 @@ namespace VulpineTest
                             Graphics,
                             new Vertex[]
                             {
-                                new Vertex(-180f, -90f, 0f,  0f, 0f, 1f,     0f, 0f),
-                                new Vertex(0f, -90f, 0f,   0f, 0f, 1f,     1f, 0f),
-                                new Vertex(180f, 90f, 0f,    0f, 0f, 1f,     1f, 1f),
-                                new Vertex(0f, 90f, 0f,   0f, 0f, 1f,     0f, 1f)
+                                new Vertex(new Vector3(-180f, -90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0f, 0f), Color4.White),
+                                new Vertex(new Vector3(0f, -90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(1f, 0f), Color4.White),
+                                new Vertex(new Vector3(180f, 90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(1f, 1f), Color4.White),
+                                new Vertex(new Vector3(0f, 90f, 0f), new Vector3(0f, 0f, 1f), new Vector2(0f, 1f), Color4.White)
                             },
                             new int[] { 0, 1, 2,    2, 3, 0 }
                         ),
@@ -149,13 +162,13 @@ namespace VulpineTest
         {
             base.OnResize();
 
-            Pipeline.ViewportSize = (Vector2)Size;
+            Pipeline.ViewportSize = (Vector2)ClientSize;
             Pipeline.Build();
-            TextRenderer.ViewportSize = (Vector2)Size;
+            TextRenderer.ViewportSize = (Vector2)ClientSize;
             TextRenderer.BuildPipeline();
-            MeshRenderer.ViewportSize = (Vector2)Size;
+            MeshRenderer.ViewportSize = (Vector2)ClientSize;
             MeshRenderer.BuildPipeline();
-            ParticleRenderer.ViewportSize = (Vector2)Size;
+            ParticleRenderer.ViewportSize = (Vector2)ClientSize;
             ParticleRenderer.BuildPipeline();
         }
 
@@ -184,11 +197,12 @@ namespace VulpineTest
             VP.Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.ToRad(80f), (float)Width / (float)Height, 0.1f, 1000f);
             BViewProjection.Write(ref VP);
 
-            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
+            TextRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)ClientSize, 0f, 1f);
 
-            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
+            MeshRenderer.View = Matrix4.Identity;
+            MeshRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)ClientSize, 0f, 1f);
 
-            ParticleRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)Size, 0f, 1f);
+            ParticleRenderer.Projection = Matrix4.CreateOrtho(Vector2.Zero, (Vector2)ClientSize, 0f, 1f);
 
             LastUpdateTick = Tick;
         }
@@ -235,7 +249,7 @@ namespace VulpineTest
         {
             base.OnDrawToSwapchainImage(image);
 
-            CommandBuffer[image].Submit(false);
+            CommandBuffer[image].Submit(true);
 
             MeshRenderer.Draw(image, Tick);
 

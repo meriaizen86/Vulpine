@@ -53,5 +53,15 @@ namespace Vulpine
         {
             throw new NotImplementedException();
         }
+
+        public static bool operator ==(Color4 a, Color4 b)
+        {
+            return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
+        }
+
+        public static bool operator !=(Color4 a, Color4 b)
+        {
+            return a.R != b.R || a.G != b.G || a.B != b.B || a.A != b.A;
+        }
     }
 }

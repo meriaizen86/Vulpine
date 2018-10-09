@@ -64,6 +64,16 @@ namespace Vulpine
             return new Vector3I((int)a.X, (int)a.Y, (int)a.Z);
         }
 
+        public static bool operator ==(Vector3I a, Vector3I b)
+        {
+            return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+        }
+
+        public static bool operator !=(Vector3I a, Vector3I b)
+        {
+            return a.X != b.X || a.Y != b.Y || a.Z != b.Z;
+        }
+
         public override string ToString()
         {
             return $"({X}, {Y}, {Z})";

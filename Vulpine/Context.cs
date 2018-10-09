@@ -155,7 +155,7 @@ namespace Vulpine
             SwapchainImages = new VKImage[imgs.Length];
             for (var i = 0; i < imgs.Length; i++)
             {
-                SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format, Window.Size);
+                SwapchainImages[i] = new VKImage(this, imgs[i], Swapchain.Format, Window.FrameBufferSize);
                 SwapchainImages[i].CreateDepthStencil();
             }
         }

@@ -29,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -37,6 +38,10 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -63,6 +68,7 @@
     <Compile Include="DescriptorItem.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Graphics.cs" />
+    <Compile Include="Utils\ImageBuilder.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="Matrix3.cs" />
     <Compile Include="Matrix4.cs" />
@@ -71,6 +77,7 @@
     <Compile Include="PrimitiveRenderMode.cs" />
     <Compile Include="PrimitiveType.cs" />
     <Compile Include="MeshRenderer.cs" />
+    <Compile Include="Quaternion.cs" />
     <Compile Include="Sprite\CharRenderer.cs" />
     <Compile Include="Sprite\ParticleRenderer.cs" />
     <Compile Include="Sprite\SpriteFontChar.cs" />
@@ -78,6 +85,7 @@
     <Compile Include="Sprite\Sprite.cs" />
     <Compile Include="Sprite\TextRenderer.cs" />
     <Compile Include="Sprite\SpriteFont.cs" />
+    <Compile Include="ViewProjection.cs" />
     <Compile Include="VKBuffer.cs" />
     <Compile Include="Content.cs" />
     <Compile Include="Context.cs" />
@@ -95,6 +103,7 @@
     <Compile Include="VKImage.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

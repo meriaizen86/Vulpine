@@ -13,15 +13,17 @@ namespace Vulpine
         public Vector3 Position;
         public Vector3 Normal;
         public Vector2 TexCoord;
+        public Color4 Color;
 
-        public Vertex(Vector3 p, Vector3 n, Vector2 uv)
+        public Vertex(Vector3 p, Vector3 n, Vector2 uv, Color4 color)
         {
             Position = p;
             Normal = n;
             TexCoord = uv;
+            Color = color;
         }
 
-        public Vertex(
+        /*public Vertex(
             float px, float py, float pz,
             float nx, float ny, float nz,
             float u, float v)
@@ -29,7 +31,7 @@ namespace Vulpine
             Position = new Vector3(px, py, pz);
             Normal = new Vector3(nx, ny, nz);
             TexCoord = new Vector2(u, v);
-        }
+        }*/
 
         public override string ToString()
         {

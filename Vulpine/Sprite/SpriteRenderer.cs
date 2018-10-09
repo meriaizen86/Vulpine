@@ -37,6 +37,7 @@ namespace Vulpine.Sprite
         VKBuffer UTime;
         int Count;
 
+        public Matrix4 View = Matrix4.Identity;
         public Matrix4 Projection = Matrix4.Identity;
 
         public BlendMode BlendMode
@@ -75,13 +76,61 @@ namespace Vulpine.Sprite
             }
         }
 
+        public bool DepthWrite
+        {
+            get
+            {
+                return Pipeline.DepthWrite;
+            }
+            set
+            {
+                Pipeline.DepthWrite = value;
+            }
+        }
+
+        public bool DepthTest
+        {
+            get
+            {
+                return Pipeline.DepthTest;
+            }
+            set
+            {
+                Pipeline.DepthTest = value;
+            }
+        }
+
+        public bool ClearDepth
+        {
+            get
+            {
+                return Pipeline.ClearDepthOnBeginPass;
+            }
+            set
+            {
+                Pipeline.ClearDepthOnBeginPass = value;
+            }
+        }
+
+        public string[] Shaders
+        {
+            get
+            {
+                return Pipeline.Shaders;
+            }
+            set
+            {
+                Pipeline.Shaders = value;
+            }
+        }
+
         public SpriteRenderer(Graphics g, Texture2D tex, string vertexShader, string fragmentShader, int maxSprites = 1024)
         {
             MaxSprites = maxSprites;
             Graphics = g;
             Texture = tex;
             Instances = VKBuffer.InstanceInfo<SpriteInfo>(g, maxSprites);
-            UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
+            UProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
 
             Pipeline = new PipelineController(Graphics);
@@ -124,7 +173,8 @@ namespace Vulpine.Sprite
 
         public void Draw(VKImage image, float tick)
         {
-            UProjection.Write(ref Projection);
+            var vp = new ViewProjection { View = View, Projection = Projection };
+            UProjection.Write(ref vp);
             UTime.Write(ref tick);
 
             var cb = CBuffer[image];

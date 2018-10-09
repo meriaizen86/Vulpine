@@ -66,6 +66,16 @@ namespace Vulpine
             return new Vector2I((int)a.X, (int)a.Y);
         }
 
+        public static bool operator ==(Vector2I a, Vector2I b)
+        {
+            return a.X == b.X && a.Y == b.Y;
+        }
+
+        public static bool operator !=(Vector2I a, Vector2I b)
+        {
+            return a.X != b.X || a.Y != b.Y;
+        }
+
         public override string ToString()
         {
             return $"({X}, {Y})";

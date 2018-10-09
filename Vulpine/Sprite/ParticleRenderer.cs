@@ -45,6 +45,7 @@ namespace Vulpine.Sprite
         int Count;
         int NextWritePos;
 
+        public Matrix4 View = Matrix4.Identity;
         public Matrix4 Projection = Matrix4.Identity;
 
         public BlendMode BlendMode
@@ -97,6 +98,54 @@ namespace Vulpine.Sprite
             }
         }
 
+        public bool DepthWrite
+        {
+            get
+            {
+                return Pipeline.DepthWrite;
+            }
+            set
+            {
+                Pipeline.DepthWrite = value;
+            }
+        }
+
+        public bool DepthTest
+        {
+            get
+            {
+                return Pipeline.DepthTest;
+            }
+            set
+            {
+                Pipeline.DepthTest = value;
+            }
+        }
+
+        public bool ClearDepth
+        {
+            get
+            {
+                return Pipeline.ClearDepthOnBeginPass;
+            }
+            set
+            {
+                Pipeline.ClearDepthOnBeginPass = value;
+            }
+        }
+
+        public string[] Shaders
+        {
+            get
+            {
+                return Pipeline.Shaders;
+            }
+            set
+            {
+                Pipeline.Shaders = value;
+            }
+        }
+
         public ParticleRenderer(Graphics g, Texture2D tex, Sprite sprite, string vertexShader, string fragmentShader, int maxParticles = 1024)
         {
             MaxParticles = maxParticles;
@@ -104,7 +153,7 @@ namespace Vulpine.Sprite
             Texture = tex;
             Sprite = sprite;
             Instances = VKBuffer.InstanceInfo<ParticleInfo>(g, maxParticles);
-            UProjection = VKBuffer.UniformBuffer<Matrix4>(g, 1);
+            UProjection = VKBuffer.UniformBuffer<ViewProjection>(g, 1);
             UTime = VKBuffer.UniformBuffer<float>(g, 1);
             USpriteCoords = VKBuffer.UniformBuffer<SpriteCoords>(g, 1);
             UColor = VKBuffer.UniformBuffer<Color4>(g, 1);
@@ -174,7 +223,8 @@ namespace Vulpine.Sprite
             if (Count == 0)
                 return;
 
-            UProjection.Write(ref Projection);
+            var vp = new ViewProjection { View = View, Projection = Projection };
+            UProjection.Write(ref vp);
             UTime.Write(ref tick);
 
             var cb = CBuffer[image];

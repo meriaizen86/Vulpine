@@ -38,7 +38,7 @@ namespace Vulpine
             Graphics = g;
             Graphics.Context.Pipelines.Add(this);
 
-            ViewportSize = (Vector2)g.Context.Window.Size;
+            ViewportSize = (Vector2)g.Context.Window.ClientSize;
         }
 
         public void Build()
@@ -47,6 +47,7 @@ namespace Vulpine
             PipelineLayout?.Dispose();
             //UsingSamplers?.DisposeRange();
             DescriptorPool?.Dispose();
+            RenderPass?.Dispose();
             Pipeline?.Dispose();
 
             DescriptorSetLayout = VKHelper.CreateDescriptorSetLayout(Graphics, DescriptorItems);

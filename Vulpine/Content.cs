@@ -11,7 +11,7 @@ namespace Vulpine
 {
     public class Content : EasyDisposable
     {
-        Dictionary<string, IDisposable> Cached = new Dictionary<string, IDisposable>();
+        Dictionary<Tuple<Type, string>, IDisposable> Cached = new Dictionary<Tuple<Type, string>, IDisposable>();
         Context Context;
 
         internal Content(Context context)
@@ -22,22 +22,29 @@ namespace Vulpine
         public T Get<T>(string name)
             where T : IDisposable
         {
-            string path = Path.GetFullPath(name);
-            IDisposable found;
-            if (Cached.TryGetValue(path, out found))
-                return (T)found;
-
             var type = typeof(T);
+            var path = Path.GetFullPath(name);
+            var typePath = new Tuple<Type, string>(type, path);
+            IDisposable found;
+            if (Cached.TryGetValue(typePath, out found))
+                return (T)found;
+            
             if (type == typeof(ShaderModule))
             {
                 found = ToDispose(LoadShaderModule(Context, path));
-                Cached.Add(path, found);
+                Cached.Add(typePath, found);
                 return (T)found;
             }
             else if (type == typeof(Texture2D))
             {
-                found = ToDispose(Texture2D.FromFile(Context, path));
-                Cached.Add(path, found);
+                found = ToDispose(Texture2D.FromFile(Context.Graphics, path));
+                Cached.Add(typePath, found);
+                return (T)found;
+            }
+            else if (type == typeof(System.Drawing.Image))
+            {
+                found = ToDispose(System.Drawing.Image.FromFile(path));
+                Cached.Add(typePath, found);
                 return (T)found;
             }
 

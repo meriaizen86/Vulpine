@@ -31,7 +31,7 @@ namespace Vulpine
         {
             get
             {
-                return (float)Math.Sqrt(X * X + Y * Y + Z * Z);
+                return (float)Math.Sqrt(Distance2);
             }
         }
 
@@ -72,6 +72,38 @@ namespace Vulpine
                 X * other.Z - Z * other.X,
                 X * other.Y - Y * other.X
             );
+        }
+
+        public Vector3 RotateX(float a)
+        {
+            return new Vector3(
+                X,
+                Y * MathHelper.DCos(a) - Z * MathHelper.DSin(a),
+                Y * MathHelper.DSin(a) + Z * MathHelper.DCos(a)
+            );
+        }
+
+        public Vector3 RotateY(float a)
+        {
+            return new Vector3(
+                Z * MathHelper.DSin(a) - X * MathHelper.DCos(a),
+                Y,
+                Z * MathHelper.DCos(a) + X * MathHelper.DSin(a)
+            );
+        }
+
+        public Vector3 RotateZ(float a)
+        {
+            return new Vector3(
+                X * MathHelper.DCos(a) - Y * MathHelper.DSin(a),
+                X * MathHelper.DSin(a) + Y * MathHelper.DCos(a),
+                Z
+            );
+        }
+
+        public Vector3 Rotate(Angle angle)
+        {
+            return RotateX(angle.Roll).RotateY(angle.Pitch).RotateZ(angle.Yaw);
         }
 
         public static Vector3 operator +(Vector3 a, Vector3 b)
@@ -127,6 +159,16 @@ namespace Vulpine
         public static explicit operator System.Numerics.Vector3(Vector3 a)
         {
             return new System.Numerics.Vector3(a.X, a.Y, a.Z);
+        }
+
+        public static bool operator ==(Vector3 a, Vector3 b)
+        {
+            return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+        }
+
+        public static bool operator !=(Vector3 a, Vector3 b)
+        {
+            return a.X != b.X || a.Y != b.Y || a.Z != b.Z;
         }
 
         public override string ToString()

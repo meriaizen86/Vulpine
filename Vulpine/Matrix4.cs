@@ -43,6 +43,35 @@ namespace Vulpine
             }
         }
 
+        public Vector3 Forward
+        {
+            get
+            {
+                return new Vector3(M31, M32, M33);
+            }
+        }
+
+        public Angle Rotation
+        {
+            get
+            {
+                return new Angle(
+                    MathHelper.DAtan2(M32, M33),
+                    MathHelper.DAtan2(-M31, (float)Math.Sqrt(M32 * M32 + M33 * M33)),
+                    MathHelper.DAtan2(M21, M11)
+                );
+            }
+        }
+
+        /*
+        public Quaternion Quaternion
+        {
+            get
+            {
+                return new Quaternion(System.Numerics.Quaternion.CreateFromRotationMatrix(InternalMatrix));
+            }
+        }*/
+
         public static Matrix4 operator *(Matrix4 a, Matrix4 b)
         {
             return new Matrix4 { InternalMatrix = a.InternalMatrix * b.InternalMatrix };
@@ -58,6 +87,18 @@ namespace Vulpine
         {
             var comb = (Matrix4x4.CreateTranslation(new System.Numerics.Vector3(b.X, b.Y, b.Z)) * a.InternalMatrix).Translation;
             return new Vector3(comb.X, comb.Y, comb.Z);
+        }
+        
+        public static Angle operator *(Matrix4 a, Angle b)
+        {
+            var comb = a * CreateRotation(b);
+            return comb.Rotation;
+        }
+
+        public static Angle operator *(Angle b, Matrix4 a)
+        {
+            var comb = CreateRotation(b) * a;
+            return comb.Rotation;
         }
 
         public static Matrix4 CreateWorld(Vector3 pos, Vector3 forward, Vector3 up)
@@ -118,6 +159,16 @@ namespace Vulpine
                     Matrix4x4.CreateRotationX(MathHelper.ToRad(-90f - ang.Pitch)) *
                     Matrix4x4.CreateRotationZ(MathHelper.ToRad(ang.Yaw + 90f))
             };
+        }
+
+        public static Matrix4 CreateRotation(Angle angle)
+        {
+            return CreateRotationX(angle.Roll) * CreateRotationY(angle.Pitch) * CreateRotationZ(angle.Yaw);
+        }
+
+        public override string ToString()
+        {
+            return $"[ [ {M11}, {M12}, {M13}, {M14} ], [ {M21}, {M22}, {M23}, {M24} ], [ {M31}, {M32}, {M33}, {M34} ], [ {M41}, {M42}, {M43}, {M44} ] ]";
         }
     }
 }
