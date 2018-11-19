@@ -21,11 +21,11 @@ namespace Vulpine
 
         public string[] Shaders = { };
         public DescriptorItem[] DescriptorItems = { };
-        public bool DepthTest = true, DepthWrite = true;
+        public bool DepthTest = false, DepthWrite = false;
         public BlendMode BlendMode = BlendMode.Alpha;
         public bool Instancing = false;
         public Type InstanceInfoType = null;
-        public bool ClearDepthOnBeginPass = true;
+        public bool ClearDepthOnBeginPass = false;
         public PrimitiveType PrimitiveType = PrimitiveType.Triangles;
         public PrimitiveRenderMode PrimitiveRenderMode = PrimitiveRenderMode.Fill;
         public PrimitiveCullMode PrimitiveCullMode = PrimitiveCullMode.None;

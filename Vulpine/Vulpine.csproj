@@ -63,11 +63,18 @@
   <ItemGroup>
     <Compile Include="Angle.cs" />
     <Compile Include="BlendMode.cs" />
+    <Compile Include="SpirV\Capability.cs" />
     <Compile Include="Color4.cs" />
     <Compile Include="CommandBufferController.cs" />
     <Compile Include="DescriptorItem.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Graphics.cs" />
+    <Compile Include="SpirV\EntryPoint.cs" />
+    <Compile Include="SpirV\ExecutionMode.cs" />
+    <Compile Include="SpirV\ExecutionModel.cs" />
+    <Compile Include="SpirV\MemoryModel.cs" />
+    <Compile Include="SpirV\OpCodeID.cs" />
+    <Compile Include="SpirV\SpirV.cs" />
     <Compile Include="Utils\ImageBuilder.cs" />
     <Compile Include="MathHelper.cs" />
     <Compile Include="Matrix3.cs" />

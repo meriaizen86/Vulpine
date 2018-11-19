@@ -47,6 +47,10 @@ namespace Vulpine
                 Cached.Add(typePath, found);
                 return (T)found;
             }
+            else
+            {
+                throw new ArgumentException($"Illegal type for <T> ({type})");
+            }
 
             throw new FileNotFoundException(path);
         }
